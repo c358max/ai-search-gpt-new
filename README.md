@@ -20,3 +20,9 @@
 8. `./sh_bin/04_run_vector_search_test_local.sh`
 
 상세 절차는 `sh_bin/readme.md` 참고.
+
+## 테스트 실행
+- 기본 검증(로컬 ES 없이 가능): `./gradlew test`
+- 통합 검증(Elasticsearch 필요): `./gradlew integrationTest`
+
+통합 테스트는 로컬 Elasticsearch, truststore, 샘플 색인 환경이 준비된 상태를 전제로 합니다.

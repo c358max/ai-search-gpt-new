@@ -22,3 +22,5 @@ if arr:
     top = Counter(item.get('category', '') for item in arr).most_common(5)
     print('[DATA] top_categories=' + ', '.join(f"{k}:{v}" for k, v in top))
 PY
+
+# 여기도 신경 안씀

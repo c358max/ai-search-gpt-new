@@ -1,6 +1,7 @@
 package com.example.aisearch;
 
 import com.example.aisearch.service.indexing.orchestration.IndexRolloutService;
+import com.example.aisearch.support.RequiresElasticsearch;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -16,6 +17,7 @@ import java.net.http.HttpResponse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@RequiresElasticsearch
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class SearchControllerRestClientTest extends TruststoreTestBase {
 

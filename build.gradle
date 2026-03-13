@@ -44,4 +44,21 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    useJUnitPlatform {
+        excludeTags 'integration'
+    }
+}
+
+tasks.register('integrationTest', Test) {
+    group = 'verification'
+    description = 'Runs integration tests that require Elasticsearch and local environment setup.'
+    useJUnitPlatform {
+        includeTags 'integration'
+    }
+    systemProperty 'ai.search.it.enabled', 'true'
+    shouldRunAfter tasks.named('test')
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('test')
 }

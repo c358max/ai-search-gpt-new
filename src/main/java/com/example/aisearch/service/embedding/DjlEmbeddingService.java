@@ -15,6 +15,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -37,6 +38,7 @@ import java.util.List;
  * 모델 상세는 docs/01.embedding-model.md 참고
  */
 @Service
+@ConditionalOnProperty(prefix = "ai-search.embedding", name = "provider", havingValue = "djl", matchIfMissing = true)
 public class DjlEmbeddingService implements EmbeddingService {
 
     private static final Logger log = LoggerFactory.getLogger(DjlEmbeddingService.class);

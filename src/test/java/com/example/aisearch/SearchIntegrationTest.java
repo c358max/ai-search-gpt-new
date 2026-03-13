@@ -1,5 +1,5 @@
 package com.example.aisearch;
-
+// 통합테스트용
 import com.example.aisearch.model.SearchHitResult;
 import com.example.aisearch.model.search.SearchPageResult;
 import com.example.aisearch.model.search.SearchPagingPolicy;
@@ -9,6 +9,7 @@ import com.example.aisearch.model.search.SearchSortOption;
 import com.example.aisearch.service.indexing.orchestration.IndexRolloutResult;
 import com.example.aisearch.service.indexing.orchestration.IndexRolloutService;
 import com.example.aisearch.service.search.ProductSearchService;
+import com.example.aisearch.support.RequiresElasticsearch;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -24,6 +25,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @SpringBootTest
+@RequiresElasticsearch
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class SearchIntegrationTest extends TruststoreTestBase {
 

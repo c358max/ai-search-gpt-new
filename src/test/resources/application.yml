@@ -1,4 +1,6 @@
 ai-search:
+  embedding:
+    provider: stub
   elasticsearch-url: ${AI_SEARCH_ES_URL:http://localhost:9200}
   username: ${AI_SEARCH_ES_USERNAME:elastic}
   password: ${AI_SEARCH_ES_PASSWORD:password}

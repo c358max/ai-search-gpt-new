@@ -31,7 +31,7 @@ spec:
             - name: elasticsearch
               volumeMounts:
                 - name: user-dict
-                  mountPath: /usr/share/elasticsearch/config/analysis/user_dict_ko.txt
+                  mountPath: /usr/share/elasticsearch/config/analysis/user_dict_ko.txt    # 서버 띄울땐 여기 수정
                   subPath: user_dict_ko.txt
               resources:
                 requests:

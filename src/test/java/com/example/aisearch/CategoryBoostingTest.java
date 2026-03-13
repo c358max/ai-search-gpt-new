@@ -7,6 +7,7 @@ import com.example.aisearch.service.indexing.orchestration.IndexRolloutResult;
 import com.example.aisearch.service.indexing.orchestration.IndexRolloutService;
 import com.example.aisearch.service.search.categoryboost.policy.CategoryBoostBetaTuner;
 import com.example.aisearch.service.search.ProductSearchService;
+import com.example.aisearch.support.RequiresElasticsearch;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
@@ -21,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 @SpringBootTest
+@RequiresElasticsearch
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class CategoryBoostingTest extends TruststoreTestBase {
 
