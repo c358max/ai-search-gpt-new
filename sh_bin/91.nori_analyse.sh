@@ -2,12 +2,17 @@
 set -euo pipefail
 
 #-----[{기본값 설정}]--------------
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/common/port_forward.sh"
+
 ES_URL="${ES_URL:-http://localhost:9200}"
 ES_USERNAME="${ES_USERNAME:-elastic}"
 ANALYZE_INDEX="${ANALYZE_INDEX:-food-products-read}"
 ANALYZER_NAME="${ANALYZER_NAME:-ko_mall_search_analyzer}"
 NAMESPACE="${NAMESPACE:-ai-search}"
 SECRET_NAME="${SECRET_NAME:-ai-search-es-es-elastic-user}"
+SERVICE="${SERVICE:-}"
+LOCAL_PORT="${LOCAL_PORT:-9200}"
 
 # 첫 번째 인자로 분석할 텍스트를 받는다.
 ANALYZE_TEXT="${1:-}"
@@ -37,6 +42,18 @@ if [ -z "${ES_PASSWORD}" ]; then
   exit 1
 fi
 
+if [ -z "${SERVICE}" ]; then
+  SERVICE="$(find_es_http_service "${NAMESPACE}")"
+fi
+
+if [ -z "${SERVICE}" ]; then
+  echo "[오류] namespace ${NAMESPACE}에서 Elasticsearch HTTP 서비스를 찾지 못했습니다."
+  exit 1
+fi
+
+start_port_forward "${NAMESPACE}" "${SERVICE}" "${LOCAL_PORT}" 9200 "/tmp/ai-search-nori-analyse-port-forward.log"
+trap cleanup_port_forward EXIT
+
 # JSON 문자열 최소 이스케이프
 json_escape() {
   local s="$1"
@@ -51,7 +68,7 @@ ESCAPED_TEXT="$(json_escape "${ANALYZE_TEXT}")"
 #-----[{Nori _analyze 호출}]--------------
 RESPONSE="$({
   curl -sS -u "${ES_USERNAME}:${ES_PASSWORD}" \
-    -X POST "${ES_URL}/${ANALYZE_INDEX}/_analyze" \
+    -X POST "http://localhost:${LOCAL_PORT}/${ANALYZE_INDEX}/_analyze" \
     -H "Content-Type: application/json" \
     -d "{\"analyzer\":\"${ANALYZER_NAME}\",\"text\":\"${ESCAPED_TEXT}\"}"
 } )"

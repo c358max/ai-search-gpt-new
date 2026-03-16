@@ -2,12 +2,14 @@
 set -euo pipefail
 
 # 기본 실행 환경 값
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+source "${SCRIPT_DIR}/common/port_forward.sh"
+
 NAMESPACE="ai-search"
 SERVICE="${SERVICE:-}"
 LOCAL_PORT="9200"
 TEST_CLASS_PATTERN="*VectorSearchIntegrationTest"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 TRUSTSTORE_PATH="${HOME}/.ai-cert/djl-truststore.p12"
 TRUSTSTORE_PASSWORD="${AI_SEARCH_TRUSTSTORE_PASSWORD:-changeit}"
 
@@ -43,8 +45,7 @@ echo "[INFO] elastic password loaded from secret"
 
 # SERVICE를 지정하지 않으면 -es-http 서비스 이름을 자동으로 찾습니다.
 if [ -z "${SERVICE}" ]; then
-  SERVICE=$(kubectl get svc -n "${NAMESPACE}" -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' \
-    | awk '/-es-http$/ {print; exit}')
+  SERVICE="$(find_es_http_service "${NAMESPACE}")"
 fi
 
 if [ -z "${SERVICE}" ]; then
@@ -55,17 +56,8 @@ fi
 echo "[INFO] using service ${SERVICE}"
 
 # 테스트 중 Elasticsearch에 접속할 수 있게 로컬 포트포워딩을 엽니다.
-echo "[INFO] starting temporary port-forward"
-kubectl port-forward -n "${NAMESPACE}" service/"${SERVICE}" "${LOCAL_PORT}":9200 >/tmp/ai-search-local-test-port-forward.log 2>&1 &
-PF_PID=$!
-
-# 테스트가 끝나면 포트포워딩 프로세스를 정리합니다.
-cleanup() {
-  kill "${PF_PID}" >/dev/null 2>&1 || true
-}
-trap cleanup EXIT
-
-sleep 4
+start_port_forward "${NAMESPACE}" "${SERVICE}" "${LOCAL_PORT}" 9200 "/tmp/ai-search-local-test-port-forward.log"
+trap cleanup_port_forward EXIT
 
 # truststore를 JVM에 적용하고 통합 테스트를 실행합니다.
 echo "[INFO] running JUnit test locally (${TEST_CLASS_PATTERN})"

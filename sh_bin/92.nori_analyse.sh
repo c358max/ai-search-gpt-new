@@ -1,23 +1,28 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# POS(품사) 확인용 Nori analyze 스크립트
-# 기본 모드: tokenizer (품사 정보 확인에 유리)
+# POS(품사) + 동의어 확인용 Nori analyze 스크립트
+# 기본 모드: analyzer (동의어 확인에 유리)
 #
 # 사용 예시
 #   ./sh_bin/92.nori_analyse.sh "얇은피 만두"
 #   ANALYZE_MODE=analyzer ANALYZER_NAME=ko_mall_search_analyzer ./sh_bin/92.nori_analyse.sh "얇은피 만두"
-#   TOKENIZER_NAME=ko_nori_userdict_tokenizer TOKEN_FILTERS=lowercase,nori_part_of_speech ./sh_bin/92.nori_analyse.sh "얇은피 만두"
+#   ANALYZE_MODE=tokenizer TOKENIZER_NAME=ko_nori_userdict_tokenizer TOKEN_FILTERS=lowercase,nori_part_of_speech ./sh_bin/92.nori_analyse.sh "얇은피 만두"
 
 #-----[{기본값 설정}]--------------
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/common/port_forward.sh"
+
 ES_URL="${ES_URL:-http://localhost:9200}"
 ES_USERNAME="${ES_USERNAME:-elastic}"
 ANALYZE_INDEX="${ANALYZE_INDEX:-food-products-read}"
 NAMESPACE="${NAMESPACE:-ai-search}"
 SECRET_NAME="${SECRET_NAME:-ai-search-es-es-elastic-user}"
+SERVICE="${SERVICE:-}"
+LOCAL_PORT="${LOCAL_PORT:-9200}"
 
 # analyzer | tokenizer
-ANALYZE_MODE="${ANALYZE_MODE:-tokenizer}"
+ANALYZE_MODE="${ANALYZE_MODE:-analyzer}"
 
 # analyzer 모드 파라미터
 ANALYZER_NAME="${ANALYZER_NAME:-ko_mall_search_analyzer}"
@@ -62,6 +67,18 @@ if [ -z "${ES_PASSWORD}" ]; then
   echo "[확인] namespace=${NAMESPACE}, secret=${SECRET_NAME}"
   exit 1
 fi
+
+if [ -z "${SERVICE}" ]; then
+  SERVICE="$(find_es_http_service "${NAMESPACE}")"
+fi
+
+if [ -z "${SERVICE}" ]; then
+  echo "[오류] namespace ${NAMESPACE}에서 Elasticsearch HTTP 서비스를 찾지 못했습니다."
+  exit 1
+fi
+
+start_port_forward "${NAMESPACE}" "${SERVICE}" "${LOCAL_PORT}" 9200 "/tmp/ai-search-nori-analyse-detail-port-forward.log"
+trap cleanup_port_forward EXIT
 
 # JSON 문자열 최소 이스케이프
 json_escape() {
@@ -137,7 +154,7 @@ fi
 #-----[{Nori _analyze 호출}]--------------
 RESPONSE="$({
   curl -sS -u "${ES_USERNAME}:${ES_PASSWORD}" \
-    -X POST "${ES_URL}/${ANALYZE_INDEX}/_analyze" \
+    -X POST "http://localhost:${LOCAL_PORT}/${ANALYZE_INDEX}/_analyze" \
     -H "Content-Type: application/json" \
     -d "${PAYLOAD}"
 })"
@@ -147,7 +164,7 @@ if command -v jq >/dev/null 2>&1; then
   echo "${RESPONSE}" | jq .
 
   echo
-  echo "[POS 요약(token / leftPOS / leftPOS_ko / rightPOS / rightPOS_ko / posType)]"
+  echo "[Tokenizer POS 요약(token / leftPOS / leftPOS_ko / rightPOS / rightPOS_ko / posType)]"
   echo "${RESPONSE}" | jq -r '
     def pos_code:
       if . == null or . == "-" then "-"
@@ -200,9 +217,23 @@ if command -v jq >/dev/null 2>&1; then
         elif $c == "NA" then "알 수 없음"
         else "기타"
         end;
-    (.detail.tokenizer.tokens // .tokens // [])
+    (.detail.tokenizer.tokens // [])
     | .[]
     | [(.token // "-"), (.leftPOS // "-"), pos_ko(.leftPOS // "-"), (.rightPOS // "-"), pos_ko(.rightPOS // "-"), (.posType // "-")]
+    | @tsv
+  ' || true
+
+  echo
+  echo "[Final Tokens]"
+  echo "${RESPONSE}" | jq -r '
+    (
+      .tokens
+      // .detail.tokenfilters[-1].tokens
+      // .detail.tokenizer.tokens
+      // []
+    )
+    | .[]
+    | [(.token // "-"), (.type // "-"), (.position // "-")]
     | @tsv
   ' || true
 else

@@ -2,6 +2,9 @@
 set -euo pipefail
 
 # 기본 네임스페이스/포트 설정
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/common/port_forward.sh"
+
 NAMESPACE="ai-search"
 SERVICE="${SERVICE:-}"
 LOCAL_PORT="9200"
@@ -19,8 +22,7 @@ echo "[INFO] elastic password loaded from secret"
 
 # SERVICE를 직접 주지 않았다면, -es-http 서비스 이름을 자동 탐지합니다.
 if [ -z "${SERVICE}" ]; then
-  SERVICE=$(kubectl get svc -n "${NAMESPACE}" -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' \
-    | awk '/-es-http$/ {print; exit}')
+  SERVICE="$(find_es_http_service "${NAMESPACE}")"
 fi
 
 # HTTP 서비스가 없으면 상태 확인을 진행할 수 없습니다.
@@ -32,17 +34,8 @@ fi
 echo "[INFO] using service ${SERVICE}"
 
 # curl로 접속하기 위해 잠시 port-forward를 엽니다.
-echo "[INFO] starting temporary port-forward"
-kubectl port-forward -n "${NAMESPACE}" service/"${SERVICE}" "${LOCAL_PORT}":9200 >/tmp/ai-search-port-forward.log 2>&1 &
-PF_PID=$!
-
-# 스크립트가 끝나면 port-forward 프로세스를 정리합니다.
-cleanup() {
-  kill "${PF_PID}" >/dev/null 2>&1 || true
-}
-trap cleanup EXIT
-
-sleep 3
+start_port_forward "${NAMESPACE}" "${SERVICE}" "${LOCAL_PORT}" 9200 "/tmp/ai-search-port-forward.log"
+trap cleanup_port_forward EXIT
 
 # 클러스터 상태 확인
 echo "[INFO] cluster health"

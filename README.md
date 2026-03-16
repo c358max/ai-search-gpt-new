@@ -44,6 +44,10 @@
 
 모델을 바꾸면 임베딩 차원이 달라질 수 있으므로 각 프로필은 별도 인덱스/alias를 사용해야 하며, 최초 1회 재색인이 필요합니다.
 
+벡터 전용 검색(BM25 제외)을 쓰려면 `search-vector-only` 프로필을 함께 사용합니다.
+- 예: `./gradlew bootRun --args='--spring.profiles.active=model-e5-small-ko-v2,search-vector-only'`
+- 예: `./gradlew bootRun --args='--spring.profiles.active=model-minilm-l12,search-vector-only,indexing-web'`
+
 모델 실행 스크립트도 사용할 수 있습니다.
 - 웹 실행: `./sh_bin/21_run_model_web.sh e5-small-ko-v2`
 - 색인 + 웹 실행: `./sh_bin/22_run_model_indexing_web.sh minilm-l12`

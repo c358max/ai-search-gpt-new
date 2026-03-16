@@ -12,6 +12,7 @@ import com.example.aisearch.service.search.query.HybridBaseQueryBuilder;
 import com.example.aisearch.service.search.query.SearchFilterQueryBuilder;
 import com.example.aisearch.service.search.strategy.mapper.DefaultSearchResponseMapper;
 import com.example.aisearch.service.search.strategy.request.ElasticsearchSearchRequestBuilder;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
@@ -22,6 +23,7 @@ import java.util.Map;
  * 검색 요청을 벡터 기반 하이브리드 검색 또는 필터 전용 검색으로 분기해 실행하는 전략.
  */
 @Component
+@ConditionalOnProperty(prefix = "ai-search.search", name = "mode", havingValue = "hybrid", matchIfMissing = true)
 public class KnnSearchStrategy implements SearchStrategy {
 
     private final ElasticsearchClient client;
