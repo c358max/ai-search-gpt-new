@@ -3,6 +3,34 @@ kind: Namespace
 metadata:
   name: ai-search
 ---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: ai-search-userdict-pv
+spec:
+  capacity:
+    storage: 1Gi
+  storageClassName: ""
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: /Users/justinpark/idea/ai_search/ai-search-gpt/.local-nas/userdict
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ai-search-userdict-pvc
+  namespace: ai-search
+spec:
+  storageClassName: ""
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: ai-search-userdict-pv
+---
 apiVersion: elasticsearch.k8s.elastic.co/v1
 kind: Elasticsearch
 metadata:
@@ -24,15 +52,14 @@ spec:
       podTemplate:
         spec:
           volumes:
-            - name: user-dict
-              configMap:
-                name: es-user-dict
+            - name: userdict-volume
+              persistentVolumeClaim:
+                claimName: ai-search-userdict-pvc
           containers:
             - name: elasticsearch
               volumeMounts:
-                - name: user-dict
-                  mountPath: /usr/share/elasticsearch/config/analysis/user_dict_ko.txt
-                  subPath: user_dict_ko.txt
+                - name: userdict-volume
+                  mountPath: /usr/share/elasticsearch/config/userdict
               resources:
                 requests:
                   memory: 2Gi

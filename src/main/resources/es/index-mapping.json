@@ -7,7 +7,7 @@
         "ko_nori_userdict_tokenizer": {
           "type": "nori_tokenizer",
           "decompound_mode": "mixed",
-          "user_dictionary": "analysis/user_dict_ko.txt"
+          "user_dictionary": "userdict/user_dict_ko.txt"
         }
       },
       "filter": {
