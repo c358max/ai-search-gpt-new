@@ -3,6 +3,8 @@ package com.example.aisearch.service.indexing.orchestration;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import com.example.aisearch.config.AiSearchProperties;
 import com.example.aisearch.service.indexing.domain.AliasSwitcher;
+import com.example.aisearch.service.indexing.orchestration.exception.InvalidRestoreTargetException;
+import com.example.aisearch.service.indexing.orchestration.exception.RestoreTargetNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -52,10 +54,10 @@ public class IndexRestoreService {
 
         String currentAliasIndex = aliasSwitcher.findCurrentAliasedIndex();
         if (targetIndex.equals(currentAliasIndex)) {
-            throw new IllegalArgumentException("targetIndex가 현재 alias 대상 인덱스와 동일합니다.");
+            throw new InvalidRestoreTargetException("targetIndex가 현재 alias 대상 인덱스와 동일합니다.");
         }
         if (!indexExists(targetIndex)) {
-            throw new IllegalArgumentException("targetIndex가 존재하지 않습니다. targetIndex=" + targetIndex);
+            throw new RestoreTargetNotFoundException("targetIndex가 존재하지 않습니다. targetIndex=" + targetIndex);
         }
 
         aliasSwitcher.swapReadAlias(currentAliasIndex, targetIndex);
@@ -99,10 +101,10 @@ public class IndexRestoreService {
 
     private void validateTargetIndex(String targetIndex) {
         if (targetIndex == null || targetIndex.isBlank()) {
-            throw new IllegalArgumentException("targetIndex는 비어 있을 수 없습니다.");
+            throw new InvalidRestoreTargetException("targetIndex는 비어 있을 수 없습니다.");
         }
         if (!isVersionedIndex(targetIndex)) {
-            throw new IllegalArgumentException("targetIndex 형식이 올바르지 않습니다. targetIndex=" + targetIndex);
+            throw new InvalidRestoreTargetException("targetIndex 형식이 올바르지 않습니다. targetIndex=" + targetIndex);
         }
     }
 
