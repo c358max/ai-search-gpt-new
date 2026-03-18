@@ -15,7 +15,8 @@ spec:
     - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
   hostPath:
-    path: /Users/justinpark/idea/ai_search/ai-search-gpt/.local-nas/userdict
+    path: /Users/davidnam/Project/pulmuone/ai-search-gpt/.local-nas/userdict
+    type: DirectoryOrCreate
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

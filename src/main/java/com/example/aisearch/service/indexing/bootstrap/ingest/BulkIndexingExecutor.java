@@ -3,6 +3,8 @@ package com.example.aisearch.service.indexing.bootstrap.ingest;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.Refresh;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -10,6 +12,8 @@ import java.util.List;
 
 @Component
 public class BulkIndexingExecutor {
+
+    private static final Logger log = LoggerFactory.getLogger(BulkIndexingExecutor.class);
 
     private final ElasticsearchClient client;
 
@@ -44,7 +48,13 @@ public class BulkIndexingExecutor {
             }
             return documents.size();
         } catch (IOException e) {
-            throw new IllegalStateException("Bulk 인덱싱 실패", e);
+            String message = e.getMessage();
+            if (message == null || message.isBlank()) {
+                message = e.getClass().getSimpleName();
+            }
+            log.error("Bulk indexing request failed. indexName={}, documentCount={}, message={}",
+                    indexName, documents.size(), message, e);
+            throw new IllegalStateException("Bulk 인덱싱 실패: " + message, e);
         }
     }
 

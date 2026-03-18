@@ -1,0 +1,6 @@
+server:
+  port: ${SERVER_PORT:8092}
+
+ai-search:
+  model-key: kure-v1
+  model-path-segment: KURE-v1

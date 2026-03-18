@@ -3,11 +3,14 @@ package com.example.aisearch.controller;
 import com.example.aisearch.controller.dto.ReloadSynonymsRequestDto;
 import com.example.aisearch.controller.dto.ReloadSynonymsResponseDto;
 import com.example.aisearch.controller.dto.SearchResponseDto;
+import com.example.aisearch.controller.dto.ModelRuntimeInfoResponseDto;
+import com.example.aisearch.config.AiSearchProperties;
 import com.example.aisearch.model.search.SearchPageResult;
 import com.example.aisearch.model.search.SearchPagingPolicy;
 import com.example.aisearch.model.search.SearchPrice;
 import com.example.aisearch.model.search.ProductSearchRequest;
 import com.example.aisearch.model.search.SearchSortOption;
+import com.example.aisearch.service.embedding.EmbeddingService;
 import com.example.aisearch.service.search.ProductSearchService;
 import com.example.aisearch.service.synonym.SynonymReloadRequest;
 import com.example.aisearch.service.synonym.SynonymReloadResult;
@@ -15,6 +18,7 @@ import com.example.aisearch.service.synonym.SynonymReloadService;
 import jakarta.validation.constraints.Min;
 import org.springframework.data.domain.Pageable;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,17 +29,24 @@ import java.util.List;
 
 @Validated
 @RestController
+@CrossOrigin(origins = "*")
 public class SearchController {
 
     private final ProductSearchService productSearchService;
     private final SynonymReloadService synonymReloadService;
+    private final EmbeddingService embeddingService;
+    private final AiSearchProperties aiSearchProperties;
 
     public SearchController(
             ProductSearchService productSearchService,
-            SynonymReloadService synonymReloadService
+            SynonymReloadService synonymReloadService,
+            EmbeddingService embeddingService,
+            AiSearchProperties aiSearchProperties
     ) {
         this.productSearchService = productSearchService;
         this.synonymReloadService = synonymReloadService;
+        this.embeddingService = embeddingService;
+        this.aiSearchProperties = aiSearchProperties;
     }
 
     @GetMapping("/api/search")
@@ -68,6 +79,23 @@ public class SearchController {
                 pageResult.totalPages(),
                 pageResult.results().size(),
                 pageResult.results()
+        );
+    }
+
+    @GetMapping("/api/search/model-info")
+    public ModelRuntimeInfoResponseDto modelInfo() {
+        Runtime runtime = Runtime.getRuntime();
+        long heapUsedBytes = runtime.totalMemory() - runtime.freeMemory();
+        long heapMaxBytes = runtime.maxMemory();
+        String modelSource = aiSearchProperties.embeddingModelPath() != null
+                ? aiSearchProperties.embeddingModelPath()
+                : aiSearchProperties.embeddingModelUrl();
+
+        return new ModelRuntimeInfoResponseDto(
+                embeddingService.dimensions(),
+                heapUsedBytes,
+                heapMaxBytes,
+                modelSource
         );
     }
 

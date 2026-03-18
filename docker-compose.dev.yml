@@ -1,0 +1,61 @@
+services:
+  ai-search-e5-small-ko-v2:
+    image: ${AI_SEARCH_IMAGE:-ai-search-gpt:dev}
+    container_name: ai-search-e5-small-ko-v2
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${AI_SEARCH_PORT_E5_SMALL_KO_V2:-8091}:8091"
+    environment:
+      SERVER_PORT: 8091
+      SPRING_PROFILES_ACTIVE: model-e5-small-ko-v2${MODEL_EXTRA_PROFILES:-,search-vector-only}
+      AI_SEARCH_ES_URL: ${AI_SEARCH_ES_URL}
+      AI_SEARCH_ES_USERNAME: ${AI_SEARCH_ES_USERNAME}
+      AI_SEARCH_ES_PASSWORD: ${AI_SEARCH_ES_PASSWORD}
+      AI_SEARCH_EMBED_MODEL_PATH: /models/multilingual-e5-small-ko-v2
+      AI_SEARCH_AUTO_PORT_FORWARD: "false"
+      JAVA_OPTS: ${JAVA_OPTS_E5_SMALL_KO_V2:--Xms512m -Xmx1536m}
+    volumes:
+      - ${AI_SEARCH_MODELS_ROOT:-/data/ai-search/models}/multilingual-e5-small-ko-v2:/models/multilingual-e5-small-ko-v2:ro
+
+  ai-search-kure-v1:
+    image: ${AI_SEARCH_IMAGE:-ai-search-gpt:dev}
+    container_name: ai-search-kure-v1
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${AI_SEARCH_PORT_KURE_V1:-8092}:8092"
+    environment:
+      SERVER_PORT: 8092
+      SPRING_PROFILES_ACTIVE: model-kure-v1${MODEL_EXTRA_PROFILES:-,search-vector-only}
+      AI_SEARCH_ES_URL: ${AI_SEARCH_ES_URL}
+      AI_SEARCH_ES_USERNAME: ${AI_SEARCH_ES_USERNAME}
+      AI_SEARCH_ES_PASSWORD: ${AI_SEARCH_ES_PASSWORD}
+      AI_SEARCH_EMBED_MODEL_PATH: /models/KURE-v1
+      AI_SEARCH_AUTO_PORT_FORWARD: "false"
+      JAVA_OPTS: ${JAVA_OPTS_KURE_V1:--Xms512m -Xmx1536m}
+    volumes:
+      - ${AI_SEARCH_MODELS_ROOT:-/data/ai-search/models}/KURE-v1:/models/KURE-v1:ro
+
+  ai-search-bge-m3:
+    image: ${AI_SEARCH_IMAGE:-ai-search-gpt:dev}
+    container_name: ai-search-bge-m3
+    restart: unless-stopped
+    profiles: ["optional"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${AI_SEARCH_PORT_BGE_M3:-8093}:8093"
+    environment:
+      SERVER_PORT: 8093
+      SPRING_PROFILES_ACTIVE: model-bge-m3${MODEL_EXTRA_PROFILES:-,search-vector-only}
+      AI_SEARCH_ES_URL: ${AI_SEARCH_ES_URL}
+      AI_SEARCH_ES_USERNAME: ${AI_SEARCH_ES_USERNAME}
+      AI_SEARCH_ES_PASSWORD: ${AI_SEARCH_ES_PASSWORD}
+      AI_SEARCH_EMBED_MODEL_PATH: /models/bge-m3
+      AI_SEARCH_AUTO_PORT_FORWARD: "false"
+      JAVA_OPTS: ${JAVA_OPTS_BGE_M3:--Xms768m -Xmx2048m}
+    volumes:
+      - ${AI_SEARCH_MODELS_ROOT:-/data/ai-search/models}/bge-m3:/models/bge-m3:ro

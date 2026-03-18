@@ -12,7 +12,7 @@ import json
 from collections import Counter
 from pathlib import Path
 
-path = Path('src/main/resources/data/food-products.json')
+path = Path('src/main/resources/data/goods_template.json')
 arr = json.loads(path.read_text(encoding='utf-8'))
 print(f"[DATA] file={path}")
 print(f"[DATA] count={len(arr)}")
@@ -22,3 +22,5 @@ if arr:
     top = Counter(item.get('category', '') for item in arr).most_common(5)
     print('[DATA] top_categories=' + ', '.join(f"{k}:{v}" for k, v in top))
 PY
+
+# 여기도 신경 안씀

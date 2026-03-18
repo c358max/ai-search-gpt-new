@@ -1,0 +1,6 @@
+server:
+  port: ${SERVER_PORT:8091}
+
+ai-search:
+  model-key: e5-small-ko-v2
+  model-path-segment: multilingual-e5-small-ko-v2

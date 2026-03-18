@@ -15,7 +15,7 @@ public class HybridBaseQueryBuilder {
     public Query build(ProductSearchRequest request, Optional<Query> filterQuery) {
         Query lexicalQuery = Query.of(q -> q.multiMatch(mm -> mm
                 .query(request.query())
-                .fields("product_name^2", "description")
+                .fields("goods_name^2", "goods_full_name", "search_keyword")
         ));
 
         return Query.of(q -> q.bool(b -> {
@@ -23,6 +23,19 @@ public class HybridBaseQueryBuilder {
             b.should(lexicalQuery);
             // vector-first 전략: 텍스트 should가 불일치여도 벡터/필터 기준으로 후보를 허용한다.
             b.minimumShouldMatch("0");
+            return b;
+        }));
+    }
+
+    public Query buildLexicalFallback(ProductSearchRequest request, Optional<Query> filterQuery) {
+        Query lexicalQuery = Query.of(q -> q.multiMatch(mm -> mm
+                .query(request.query())
+                .fields("goods_name^2", "goods_full_name", "search_keyword")
+        ));
+
+        return Query.of(q -> q.bool(b -> {
+            filterQuery.ifPresent(b::filter);
+            b.must(lexicalQuery);
             return b;
         }));
     }

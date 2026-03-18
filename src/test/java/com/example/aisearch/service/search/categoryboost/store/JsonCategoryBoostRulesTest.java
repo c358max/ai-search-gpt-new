@@ -41,4 +41,22 @@ class JsonCategoryBoostRulesTest {
 
         assertEquals(0.30, rules.findByKeyword("사과").orElseThrow().get("4"));
     }
+
+    @Test
+    void shouldLoadRulesFromArrayBasedCategoryBoostJson() {
+        JsonCategoryBoostRules rules = new JsonCategoryBoostRules(
+                new DefaultResourceLoader(),
+                new ObjectMapper(),
+                "classpath:data/category_boost.json",
+                300
+        );
+
+        Map<String, Double> 건강 = rules.findByKeyword("건강").orElseThrow();
+        assertEquals(0.9, 건강.get("5102"));
+        assertEquals(0.9, 건강.get("5108"));
+        assertEquals(0.9, 건강.get("5110"));
+
+        Map<String, Double> 간장 = rules.findByKeyword("간장").orElseThrow();
+        assertEquals(0.3, 간장.get("5081"));
+    }
 }

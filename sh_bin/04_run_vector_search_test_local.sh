@@ -68,3 +68,5 @@ AI_SEARCH_ES_PASSWORD="${PASSWORD}" \
 "${ROOT_DIR}/gradlew" test --tests "${TEST_CLASS_PATTERN}"
 
 echo "[OK] local test finished"
+
+# 안씀.

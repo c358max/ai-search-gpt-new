@@ -106,3 +106,5 @@ done
 
 # 모든 호스트 인증서 등록이 끝나면 생성 경로를 출력합니다.
 echo "[OK] truststore created: ${TRUSTSTORE_PATH}"
+
+# URL base를 인증서로

@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
@@ -21,7 +20,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * category_boosting.json 기반 룰 저장소 구현체.
+ * category_boost.json 기반 룰 저장소 구현체.
  * 조회 계약(CategoryBoostRules)과 재로딩 계약(CategoryBoostRulesReloader)을 함께 제공한다.
  *
  * 이 클래스의 역할은 크게 4가지입니다.
@@ -51,6 +50,8 @@ public class JsonCategoryBoostRules implements CategoryBoostRules, CategoryBoost
     private final AtomicReference<CategoryBoostCacheEntry> currentEntry;
 
     // 스프링 빈 생성용 기본 생성자:
+    // 운영 기본 룰 경로(classpath:data/category_boost.json)와
+    // application.yaml의 TTL 설정값(category-boost-cache-ttl-seconds)을 사용한다.
     // 기본 file source와 application.yaml의 TTL 설정값을 사용한다.
     @Autowired
     public JsonCategoryBoostRules(
@@ -60,8 +61,6 @@ public class JsonCategoryBoostRules implements CategoryBoostRules, CategoryBoost
         this(ruleSource, properties.categoryBoostCacheTtlSeconds());
     }
 
-    // 테스트/수동 구성용 생성자:
-    // 호출자가 file source 경로와 TTL을 직접 지정할 수 있다.
     public JsonCategoryBoostRules(
             org.springframework.core.io.ResourceLoader resourceLoader,
             com.fasterxml.jackson.databind.ObjectMapper objectMapper,
@@ -71,6 +70,8 @@ public class JsonCategoryBoostRules implements CategoryBoostRules, CategoryBoost
         this(new FileCategoryBoostRuleSource(resourceLoader, objectMapper, ruleFilePath), cacheTtlSeconds);
     }
 
+    // 테스트/수동 구성용 생성자:
+    // 호출자가 file source 경로와 TTL을 직접 지정할 수 있다.
     public JsonCategoryBoostRules(
             CategoryBoostRuleSource ruleSource,
             long cacheTtlSeconds

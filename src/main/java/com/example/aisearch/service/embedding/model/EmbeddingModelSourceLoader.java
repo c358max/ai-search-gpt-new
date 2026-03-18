@@ -8,7 +8,9 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 @Component
 public class EmbeddingModelSourceLoader {
@@ -37,8 +39,7 @@ public class EmbeddingModelSourceLoader {
         // 로컬 경로에 컴파일된 모델이 있으면 우선 이용한다.
         String modelPath = properties.embeddingModelPath();
         if (modelPath != null && !modelPath.isBlank() && !"__NONE__".equalsIgnoreCase(modelPath.trim())) {
-            Resource resource = resourceLoader.getResource(modelPath);
-            Path resolvedPath = resource.getFile().toPath();
+            Path resolvedPath = resolveModelPath(modelPath.trim());
             log.info("[EMBED_MODEL] using model path: {} -> {}", modelPath, resolvedPath);
             
             return new EmbeddingModelSource(resolvedPath, null, true);
@@ -47,5 +48,23 @@ public class EmbeddingModelSourceLoader {
         String modelUrl = properties.embeddingModelUrl();
         log.info("[EMBED_MODEL] using model url: {}", modelUrl);
         return new EmbeddingModelSource(null, modelUrl, false);
+    }
+
+    private Path resolveModelPath(String modelPath) throws IOException {
+        if (modelPath.startsWith("/")) {
+            Path path = Paths.get(modelPath);
+            if (!Files.exists(path)) {
+                throw new IOException("Model path does not exist: " + modelPath);
+            }
+            return path;
+        }
+
+        if (modelPath.startsWith("file:")) {
+            Resource resource = resourceLoader.getResource(modelPath);
+            return resource.getFile().toPath();
+        }
+
+        Resource resource = resourceLoader.getResource(modelPath);
+        return resource.getFile().toPath();
     }
 }

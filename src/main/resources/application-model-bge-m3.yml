@@ -1,0 +1,8 @@
+ai-search:
+  embedding:
+    provider: djl
+  model-key: bge-m3
+  model-path-segment: bge-m3
+
+server:
+  port: ${SERVER_PORT:8093}

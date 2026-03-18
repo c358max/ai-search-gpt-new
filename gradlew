@@ -114,6 +114,69 @@ case "$( uname )" in                #(
   NONSTOP* )        nonstop=true ;;
 esac
 
+java_major_version() {
+    "$1" -version 2>&1 | sed -n 's/.*version "\(1\.\)\{0,1\}\([0-9][0-9]*\).*/\2/p' | head -n 1
+}
+
+resolve_java_home_from_bin() {
+    java_bin_path=$1
+    if [ -z "$java_bin_path" ] ; then
+        return 1
+    fi
+
+    java_dir=$(cd -P "${java_bin_path%/*}/.." > /dev/null 2>&1 && pwd)
+    if [ -n "$java_dir" ] && [ -x "$java_dir/bin/java" ] ; then
+        printf '%s\n' "$java_dir"
+        return 0
+    fi
+    return 1
+}
+
+# On macOS, prefer a local JDK 21 installation if JAVA_HOME is missing or points to an older JDK.
+if "$darwin" && command -v /usr/libexec/java_home >/dev/null 2>&1 ; then
+    use_java_21=false
+    current_java_home=$JAVA_HOME
+    if [ -z "$JAVA_HOME" ] ; then
+        use_java_21=true
+    else
+        java_bin=$JAVA_HOME/bin/java
+        if [ ! -x "$java_bin" ] ; then
+            use_java_21=true
+        else
+            java_major=$(java_major_version "$java_bin")
+            if [ -z "$java_major" ] || [ "$java_major" -lt 21 ] ; then
+                use_java_21=true
+            fi
+        fi
+    fi
+
+    if "$use_java_21" ; then
+        JAVA_HOME=
+        java_cmd=$(command -v java 2>/dev/null)
+        if [ -n "$java_cmd" ] ; then
+            java_major=$(java_major_version "$java_cmd")
+            if [ -n "$java_major" ] && [ "$java_major" -ge 21 ] ; then
+                resolved_java_home=$(resolve_java_home_from_bin "$java_cmd")
+                if [ -n "$resolved_java_home" ] ; then
+                    JAVA_HOME=$resolved_java_home
+                    export JAVA_HOME
+                fi
+            fi
+        fi
+    fi
+
+    if "$use_java_21" && [ -z "$JAVA_HOME" ] ; then
+        java_home_21=$(/usr/libexec/java_home -v 21 2>/dev/null)
+        if [ -n "$java_home_21" ] ; then
+            JAVA_HOME=$java_home_21
+            export JAVA_HOME
+        fi
+    fi
+
+    if "$use_java_21" && [ -z "$JAVA_HOME" ] ; then
+        JAVA_HOME=$current_java_home
+    fi
+fi
 
 
 # Determine the Java command to use to start the JVM.

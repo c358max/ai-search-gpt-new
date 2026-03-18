@@ -1,0 +1,10 @@
+.git
+.gradle
+.idea
+build
+out
+.DS_Store
+/tmp
+docs_tasks
+.local-nas
+src/main/resources/model

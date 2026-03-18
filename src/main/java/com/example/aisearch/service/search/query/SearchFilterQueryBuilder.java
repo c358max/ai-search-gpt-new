@@ -39,7 +39,7 @@ public class SearchFilterQueryBuilder {
         }
         SearchPrice price = request.searchPrice();
         Query priceFilter = Query.of(q -> q.range(r -> {
-            r.field("price");
+            r.field("sale_price");
             if (price.minPrice() != null) {
                 // gte: 최소 가격 이상
                 r.gte(JsonData.of(price.minPrice()));
@@ -63,7 +63,7 @@ public class SearchFilterQueryBuilder {
 
         // terms는 SQL의 IN 절과 유사하다: categoryId IN (...)
         Query categoryFilter = Query.of(q -> q.terms(t -> t
-                .field("categoryId")
+                .field("lev3_category_id")
                 .terms(tf -> tf.value(values))
 
         ));

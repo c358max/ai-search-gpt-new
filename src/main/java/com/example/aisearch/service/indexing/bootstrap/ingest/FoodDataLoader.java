@@ -14,7 +14,7 @@ import java.util.List;
 @Component
 public class FoodDataLoader {
 
-    private static final String DEFAULT_DATA_PATH = "classpath:data/food-products.json";
+    private static final String DEFAULT_DATA_PATH = "classpath:data/goods_template.json";
 
     private final ObjectMapper objectMapper;
     private final ResourceLoader resourceLoader;

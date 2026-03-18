@@ -1,0 +1,4 @@
+ai-search:
+  search:
+    mode: vector-only
+

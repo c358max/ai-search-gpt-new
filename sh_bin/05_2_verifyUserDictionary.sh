@@ -92,3 +92,5 @@ if [ -n "${ANALYZE_UNEXPECTED_TOKENS}" ]; then
 fi
 
 echo "[완료] 사용자 사전 검증이 완료되었습니다."
+
+# 상용에서 배치에서 실행되게 처리

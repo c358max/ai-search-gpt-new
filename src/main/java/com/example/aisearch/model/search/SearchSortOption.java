@@ -19,7 +19,7 @@ public enum SearchSortOption {
         @Override
         public List<SortOptions> toSortOptions() {
             return List.of(
-                    numericFieldSort("price", SortOrder.Asc),
+                    numericFieldSort("sale_price", SortOrder.Asc),
                     scoreSort(SortOrder.Desc),
                     fieldSort("id", SortOrder.Asc)
             );
@@ -29,7 +29,47 @@ public enum SearchSortOption {
         @Override
         public List<SortOptions> toSortOptions() {
             return List.of(
-                    numericFieldSort("price", SortOrder.Desc),
+                    numericFieldSort("sale_price", SortOrder.Desc),
+                    scoreSort(SortOrder.Desc),
+                fieldSort("id", SortOrder.Asc)
+            );
+        }
+    },
+    POPULARITY_DESC {
+        @Override
+        public List<SortOptions> toSortOptions() {
+            return List.of(
+                    numericFieldSort("popularity_score", SortOrder.Desc),
+                    scoreSort(SortOrder.Desc),
+                    fieldSort("id", SortOrder.Asc)
+            );
+        }
+    },
+    DISCOUNT_RATE_DESC {
+        @Override
+        public List<SortOptions> toSortOptions() {
+            return List.of(
+                    numericFieldSort("discount_rate", SortOrder.Desc),
+                    scoreSort(SortOrder.Desc),
+                    fieldSort("id", SortOrder.Asc)
+            );
+        }
+    },
+    REVIEW_COUNT_DESC {
+        @Override
+        public List<SortOptions> toSortOptions() {
+            return List.of(
+                    numericFieldSort("satisfaction_count", SortOrder.Desc),
+                    scoreSort(SortOrder.Desc),
+                    fieldSort("id", SortOrder.Asc)
+            );
+        }
+    },
+    RATING_DESC {
+        @Override
+        public List<SortOptions> toSortOptions() {
+            return List.of(
+                    numericFieldSort("satisfaction_score", SortOrder.Desc),
                     scoreSort(SortOrder.Desc),
                     fieldSort("id", SortOrder.Asc)
             );

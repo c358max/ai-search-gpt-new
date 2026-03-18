@@ -112,3 +112,5 @@ echo "[3/3] 인덱스 롤아웃 실행(재색인 + alias 전환)"
 
 echo "[완료] 사용자 사전 재적용 작업이 완료되었습니다. (PV/PVC 기반, 검증은 분리 실행)"
 echo "[다음 작업] ./sh_bin/05_2_verifyUserDictionary.sh 실행"
+
+# 사용자 정의사전 리로드

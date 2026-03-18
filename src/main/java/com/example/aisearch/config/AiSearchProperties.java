@@ -47,6 +47,22 @@ public record AiSearchProperties(
      */
     long categoryBoostCacheTtlSeconds,
     /**
+     * 검색어 임베딩 캐시 TTL(초)
+     */
+    long queryEmbeddingCacheTtlSeconds,
+    /**
+     * 검색어 임베딩 캐시 최대 엔트리 수
+     */
+    long queryEmbeddingCacheMaxSize,
+    /**
+     * 검색어 임베딩 생성 제한 시간(ms)
+     */
+    long queryEmbeddingTimeoutMillis,
+    /**
+     * 검색어 임베딩 생성용 스레드 수
+     */
+    int queryEmbeddingExecutorThreads,
+    /**
      * 보관할 버전 인덱스 개수(현재 alias 대상 포함)
      */
     int indexRetentionCount

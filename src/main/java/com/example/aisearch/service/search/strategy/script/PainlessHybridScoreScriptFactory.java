@@ -18,8 +18,8 @@ public class PainlessHybridScoreScriptFactory {
             """;
 
     private static final String CATEGORY_BOOST_BLOCK = """
-            if (doc['categoryId'].size() != 0) {
-              String categoryKey = String.valueOf(doc['categoryId'].value);
+            if (doc['primary_lev3_category_id'].size() != 0) {
+              String categoryKey = String.valueOf(doc['primary_lev3_category_id'].value);
               def rawBoost = params.category_boost_by_id.get(categoryKey);
               if (rawBoost != null) {
                 categoryBoost = ((Number) rawBoost).doubleValue();

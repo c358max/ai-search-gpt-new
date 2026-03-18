@@ -9,10 +9,11 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 @Component
-@Profile("indexing")
+@Profile({"indexing", "indexing-web"})
 @ConditionalOnProperty(prefix = "ai-search", name = "run-index", havingValue = "true")
 public class IndexingRunner implements CommandLineRunner {
 
@@ -20,11 +21,14 @@ public class IndexingRunner implements CommandLineRunner {
 
     private final IndexRolloutService indexRolloutService;
     private final ConfigurableApplicationContext context;
+    private final Environment environment;
 
     public IndexingRunner(IndexRolloutService indexRolloutService,
-                          ConfigurableApplicationContext context) {
+                          ConfigurableApplicationContext context,
+                          Environment environment) {
         this.indexRolloutService = indexRolloutService;
         this.context = context;
+        this.environment = environment;
     }
 
     @Override
@@ -33,8 +37,12 @@ public class IndexingRunner implements CommandLineRunner {
         log.info("Index rollout complete. oldIndex={}, newIndex={}, indexedCount={}",
                 result.oldIndex(), result.newIndex(), result.indexedCount());
 
-        // 배치 작업 완료 후 애플리케이션 종료
-        int exitCode = SpringApplication.exit(context, () -> 0);
-        System.exit(exitCode);
+        if (environment.acceptsProfiles("indexing")) {
+            // 색인 전용 실행은 배치 작업 완료 후 종료한다.
+            int exitCode = SpringApplication.exit(context, () -> 0);
+            System.exit(exitCode);
+        }
+
+        log.info("Indexing finished in indexing-web mode. Keeping application alive for web requests.");
     }
 }

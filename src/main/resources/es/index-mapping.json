@@ -54,22 +54,33 @@
   "mappings": {
     "properties": {
       "id": {"type": "keyword"},
-      "product_name": {
+      "goods_name": {
         "type": "text",
         "analyzer": "ko_mall_analyzer",
         "search_analyzer": "ko_mall_search_analyzer"
       },
-      "category": {"type": "keyword"},
-      "categoryId": {"type": "integer"},
-      "description": {
+      "goods_full_name": {
         "type": "text",
         "analyzer": "ko_mall_analyzer",
         "search_analyzer": "ko_mall_search_analyzer"
       },
-      "price": {"type": "integer"},
+      "brand_name": {"type": "keyword"},
+      "lev3_category_id": {"type": "integer"},
+      "primary_lev3_category_id": {"type": "integer"},
+      "lev3_category_id_name": {"type": "keyword"},
+      "search_keyword": {
+        "type": "text",
+        "analyzer": "ko_mall_analyzer",
+        "search_analyzer": "ko_mall_search_analyzer"
+      },
+      "sale_price": {"type": "integer"},
+      "discount_rate": {"type": "double"},
+      "popularity_score": {"type": "double"},
+      "satisfaction_score": {"type": "double"},
+      "satisfaction_count": {"type": "integer"},
       "product_vector": {
         "type": "dense_vector",
-        "dims": __DIMS__,
+        "dims": "__DIMS__",
         "index": true,
         "similarity": "cosine"
       }

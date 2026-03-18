@@ -79,3 +79,6 @@ if command -v jq >/dev/null 2>&1; then
 else
   echo "${RESPONSE}"
 fi
+
+# 형태소 분석
+

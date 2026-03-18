@@ -60,6 +60,38 @@
 ./sh_bin/04_run_vector_search_test_local.sh
 ```
 
+### 5) 모델별 앱 실행
+```bash
+./sh_bin/21_run_model_web.sh e5-small-ko-v2
+./sh_bin/22_run_model_indexing_web.sh kure-v1
+./sh_bin/23_run_model_indexing_only.sh bge-m3
+./sh_bin/21_run_model_web.sh bge-m3
+```
+
+지원 모델 키:
+- `e5-small-ko-v2`
+- `kure-v1`
+- `bge-m3`
+
+전체 모델을 한 번에 실행할 수도 있습니다.
+```bash
+./sh_bin/30_start_all_model_web.sh
+./sh_bin/31_start_all_model_indexing_web.sh
+./sh_bin/32_stop_all_models.sh
+./sh_bin/40_deploy_dev_server.sh
+```
+
+`30_start_all_model_web.sh`, `31_start_all_model_indexing_web.sh`, `40_deploy_dev_server.sh`는 모델 비교용으로 `search-vector-only` 프로필을 함께 사용합니다.
+`31_start_all_model_indexing_web.sh`는 각 모델별 색인과 웹 실행을 순차적으로 시작합니다.
+개발서버 반영은 `40_deploy_dev_server.sh`를 권장합니다. 이 스크립트는 테스트, 기존 프로세스 정리, 모델별 재색인, 비교용 웹 기동, 상태 확인을 한 번에 수행합니다.
+
+모델별 검색 결과 비교:
+```bash
+./sh_bin/33_compare_model_search.sh "어린이 간식"
+./sh_bin/34_compare_model_search_queries.sh
+./sh_bin/35_check_model_status.sh
+```
+
 ## 운영 상태 빠른 확인
 ```bash
 ./sh_bin/90_check_k8s_elastic_pods.sh

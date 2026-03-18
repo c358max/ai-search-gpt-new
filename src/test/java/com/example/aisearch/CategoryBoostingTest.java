@@ -6,6 +6,7 @@ import com.example.aisearch.model.search.SearchSortOption;
 import com.example.aisearch.service.indexing.orchestration.IndexRolloutService;
 import com.example.aisearch.service.search.categoryboost.policy.CategoryBoostBetaTuner;
 import com.example.aisearch.service.search.ProductSearchService;
+import com.example.aisearch.support.RequiresElasticsearch;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -109,7 +110,7 @@ class CategoryBoostingTest extends ElasticsearchIntegrationTestBase {
     private long countCategoryInTopN(List<SearchHitResult> results, int topN, int expectedCategoryId) {
         return results.stream()
                 .limit(topN)
-                .map(hit -> SearchResultTestSupport.asInteger(hit.source(), "categoryId"))
+                .map(hit -> SearchResultTestSupport.asInteger(hit.source(), "lev3_category_id"))
                 .filter(categoryId -> categoryId != null && categoryId == expectedCategoryId)
                 .count();
     }

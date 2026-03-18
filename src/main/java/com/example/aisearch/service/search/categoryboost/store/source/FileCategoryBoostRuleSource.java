@@ -1,6 +1,7 @@
 package com.example.aisearch.service.search.categoryboost.store.source;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +32,7 @@ import java.util.Map;
 @Component
 public class FileCategoryBoostRuleSource implements CategoryBoostRuleSource {
 
-    public static final String DEFAULT_RULE_FILE_PATH = "classpath:data/category_boosting.json";
+    public static final String DEFAULT_RULE_FILE_PATH = "classpath:data/category_boost.json";
 
     private final ResourceLoader resourceLoader;
     private final ObjectMapper objectMapper;
@@ -59,12 +61,7 @@ public class FileCategoryBoostRuleSource implements CategoryBoostRuleSource {
         Resource resource = resourceLoader.getResource(currentRulePath());
         try (InputStream inputStream = resource.getInputStream()) {
             JsonNode root = objectMapper.readTree(inputStream);
-            JsonNode versionNode = root == null ? null : root.get("version");
-            String version = versionNode == null ? "" : versionNode.asText("");
-            if (version.isBlank()) {
-                throw new IllegalStateException("category_boosting.json version 값이 비어 있습니다. path=" + currentRulePath());
-            }
-            return version.trim();
+            return parseConfig(root, currentRulePath()).version();
         }
     }
 
@@ -72,11 +69,9 @@ public class FileCategoryBoostRuleSource implements CategoryBoostRuleSource {
     public CategoryBoostRuleSnapshot loadSnapshot() throws IOException {
         Resource resource = resourceLoader.getResource(currentRulePath());
         try (InputStream inputStream = resource.getInputStream()) {
-            CategoryBoostingConfig config = objectMapper.readValue(inputStream, CategoryBoostingConfig.class);
-            if (config == null || config.version() == null || config.version().isBlank()) {
-                throw new IllegalStateException("category_boosting.json version 값이 유효하지 않습니다. path=" + currentRulePath());
-            }
-            return new CategoryBoostRuleSnapshot(config.version().trim(), toRuleMap(config.rules()));
+            JsonNode root = objectMapper.readTree(inputStream);
+            ParsedCategoryBoostConfig config = parseConfig(root, currentRulePath());
+            return new CategoryBoostRuleSnapshot(config.version(), toRuleMap(config.rules()));
         }
     }
 
@@ -104,19 +99,36 @@ public class FileCategoryBoostRuleSource implements CategoryBoostRuleSource {
             if (keyword.isBlank()) {
                 continue;
             }
-            Map<String, Double> boosts = normalizeBoostMap(rule.categoryBoostById());
+            Map<String, Double> boosts = normalizeBoostMap(rule.categoryBoostById(), rule.categoryId(), rule.score());
             if (boosts.isEmpty()) {
                 continue;
             }
-            ruleMap.put(keyword, boosts);
+            ruleMap.merge(keyword, boosts, FileCategoryBoostRuleSource::mergeBoostMaps);
         }
         return Map.copyOf(ruleMap);
     }
 
-    private Map<String, Double> normalizeBoostMap(Map<String, Double> raw) {
-        if (raw == null || raw.isEmpty()) {
+    private static Map<String, Double> mergeBoostMaps(Map<String, Double> left, Map<String, Double> right) {
+        Map<String, Double> merged = new LinkedHashMap<>(left);
+        merged.putAll(right);
+        return Map.copyOf(merged);
+    }
+
+    private Map<String, Double> normalizeBoostMap(Map<String, Double> raw, String categoryId, Double score) {
+        if (raw != null && !raw.isEmpty()) {
+            return normalizeCategoryBoostById(raw);
+        }
+
+        if (categoryId == null || categoryId.isBlank() || score == null) {
             return Map.of();
         }
+
+        Map<String, Double> normalized = new LinkedHashMap<>();
+        normalized.put(categoryId.trim(), normalizeScore(score));
+        return Map.copyOf(normalized);
+    }
+
+    private Map<String, Double> normalizeCategoryBoostById(Map<String, Double> raw) {
         Map<String, Double> normalized = new LinkedHashMap<>();
         for (Map.Entry<String, Double> entry : raw.entrySet()) {
             String key = entry.getKey();
@@ -124,9 +136,44 @@ public class FileCategoryBoostRuleSource implements CategoryBoostRuleSource {
             if (key == null || key.isBlank() || value == null) {
                 continue;
             }
-            normalized.put(key.trim(), value);
+            normalized.put(key.trim(), normalizeScore(value));
         }
         return Map.copyOf(normalized);
+    }
+
+    private double normalizeScore(Double rawScore) {
+        if (rawScore == null) {
+            throw new IllegalArgumentException("카테고리 부스팅 score 값이 비어 있습니다.");
+        }
+        return rawScore > 1.0 ? rawScore / 10.0 : rawScore;
+    }
+
+    private ParsedCategoryBoostConfig parseConfig(JsonNode root, String path) {
+        if (root == null || root.isNull()) {
+            throw new IllegalStateException("category_boost.json 내용이 비어 있습니다. path=" + path);
+        }
+
+        if (root.isArray()) {
+            List<CategoryBoostingRule> rules = new ArrayList<>();
+            for (JsonNode item : root) {
+                rules.add(objectMapper.convertValue(item, CategoryBoostingRule.class));
+            }
+            return new ParsedCategoryBoostConfig(buildArrayVersion(root), rules);
+        }
+
+        if (root.isObject()) {
+            CategoryBoostingConfig config = objectMapper.convertValue(root, CategoryBoostingConfig.class);
+            if (config == null || config.version() == null || config.version().isBlank()) {
+                throw new IllegalStateException("category_boost.json version 값이 유효하지 않습니다. path=" + path);
+            }
+            return new ParsedCategoryBoostConfig(config.version().trim(), config.rules());
+        }
+
+        throw new IllegalStateException("category_boost.json 형식이 올바르지 않습니다. path=" + path);
+    }
+
+    private String buildArrayVersion(JsonNode root) {
+        return Integer.toHexString(root.toString().hashCode());
     }
 
     private String currentRulePath() {
@@ -147,7 +194,17 @@ public class FileCategoryBoostRuleSource implements CategoryBoostRuleSource {
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record CategoryBoostingRule(
             String keyword,
-            Map<String, Double> categoryBoostById
+            Map<String, Double> categoryBoostById,
+            @JsonProperty("category_id")
+            String categoryId,
+            @JsonProperty("score")
+            Double score
+    ) {
+    }
+
+    private record ParsedCategoryBoostConfig(
+            String version,
+            List<CategoryBoostingRule> rules
     ) {
     }
 }

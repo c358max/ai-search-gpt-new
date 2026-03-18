@@ -20,6 +20,24 @@ public class ElasticsearchSynonymEsGateway implements SynonymEsGateway {
     }
 
     @Override
+    public boolean existsSynonyms(String synonymsSetId) {
+        try {
+            client.synonyms().getSynonym(request -> request.id(synonymsSetId));
+            return true;
+        } catch (TransportException e) {
+            if (isNotFound(e)) {
+                return false;
+            }
+            throw new IllegalStateException("동의어 세트 조회 실패: " + synonymsSetId, e);
+        } catch (IOException | ElasticsearchException e) {
+            if (isNotFound(e)) {
+                return false;
+            }
+            throw new IllegalStateException("동의어 세트 조회 실패: " + synonymsSetId, e);
+        }
+    }
+
+    @Override
     public void putSynonyms(String synonymsSetId, List<String> rules) {
         try {
             client.synonyms().putSynonym(request -> request
@@ -71,6 +89,27 @@ public class ElasticsearchSynonymEsGateway implements SynonymEsGateway {
         while (current != null) {
             String msg = current.getMessage();
             if (msg != null && msg.contains("Missing required property 'ReloadDetails.index'")) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
+    }
+
+    private boolean isNotFound(Exception e) {
+        String message = e.getMessage();
+        if (message != null && (message.contains("status: 404") || message.contains("[404]") || message.contains("404 Not Found"))) {
+            return true;
+        }
+
+        Throwable current = e;
+        while (current != null) {
+            String currentMessage = current.getMessage();
+            if (currentMessage != null
+                    && (currentMessage.contains("status: 404")
+                    || currentMessage.contains("[404]")
+                    || currentMessage.contains("404 Not Found")
+                    || currentMessage.contains("resource_not_found_exception"))) {
                 return true;
             }
             current = current.getCause();

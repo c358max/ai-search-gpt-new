@@ -50,6 +50,10 @@ public class SynonymReloadService {
 
     public void ensureProductionSynonymsSet() {
         String synonymsSet = resolveRequired(null, properties.synonymsSet(), "synonymsSet");
+        if (synonymEsGateway.existsSynonyms(synonymsSet)) {
+            return;
+        }
+
         List<String> rules = synonymRuleSource.loadRules(SynonymReloadMode.PRODUCTION);
         if (rules.isEmpty()) {
             throw new InvalidSynonymReloadRequestException("운영 동의어 규칙이 비어 있습니다.");

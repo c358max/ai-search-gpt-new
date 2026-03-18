@@ -61,7 +61,7 @@ def main():
         else:
             data.append(build_other_item(i))
 
-    output = Path("src/main/resources/data/food-products.json")
+    output = Path("src/main/resources/data/goods_template.json")
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"generated deterministic {total} items -> {output}")
