@@ -62,16 +62,44 @@ public class QueryEmbeddingService {
 
     public List<Float> toQueryEmbedding(String query) {
         String cacheKey = normalize(query);
-        if (cacheKey.isBlank()) {
-            throw new IllegalArgumentException("검색어 임베딩을 생성할 query 값이 비어 있습니다.");
-        }
+        validateQueryKey(cacheKey);
 
         List<Float> cached = cache.getIfPresent(cacheKey);
         if (cached != null) {
             return cached;
         }
 
-        CompletableFuture<List<Float>> future = inFlight.computeIfAbsent(cacheKey, this::startEmbedding);
+        return awaitEmbedding(cacheKey, getOrStartInFlight(cacheKey));
+    }
+
+    private void validateQueryKey(String cacheKey) {
+        if (cacheKey.isBlank()) {
+            throw new IllegalArgumentException("검색어 임베딩을 생성할 query 값이 비어 있습니다.");
+        }
+    }
+
+    private CompletableFuture<List<Float>> getOrStartInFlight(String cacheKey) {
+        CompletableFuture<List<Float>> existing = inFlight.get(cacheKey);
+        if (existing != null) {
+            return existing;
+        }
+
+        CompletableFuture<List<Float>> created = startEmbedding(cacheKey);
+        CompletableFuture<List<Float>> previous = inFlight.putIfAbsent(cacheKey, created);
+        if (previous != null) {
+            return previous;
+        }
+
+        created.whenComplete((result, throwable) -> {
+            inFlight.remove(cacheKey, created);
+            if (throwable == null && result != null) {
+                cache.put(cacheKey, result);
+            }
+        });
+        return created;
+    }
+
+    private List<Float> awaitEmbedding(String cacheKey, CompletableFuture<List<Float>> future) {
         try {
             List<Float> embedding = future.get(timeoutMillis, TimeUnit.MILLISECONDS);
             cache.put(cacheKey, embedding);
@@ -99,13 +127,7 @@ public class QueryEmbeddingService {
         return CompletableFuture.supplyAsync(
                         () -> embeddingService.toEmbeddingVector(embeddingInputFormatter.formatQuery(cacheKey)),
                         executor
-                )
-                .whenComplete((result, throwable) -> {
-                    inFlight.remove(cacheKey);
-                    if (throwable == null && result != null) {
-                        cache.put(cacheKey, result);
-                    }
-                });
+                );
     }
 
     private Throwable unwrap(Throwable throwable) {

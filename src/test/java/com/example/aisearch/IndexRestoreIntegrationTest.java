@@ -55,20 +55,20 @@ class IndexRestoreIntegrationTest extends RestApiIntegrationTestBase {
         IndexRolloutResult baseline = indexRolloutService.rollOutFromSourceData();
         System.out.println("[BASELINE] oldIndex=" + baseline.oldIndex() + ", newIndex=" + baseline.newIndex());
 
-        System.out.println("[STEP-2] baseline 검색 검증 query=치즈");
-        JsonNode baselineSearch = search("치즈");
-        printSearchResults("BASELINE", "치즈", baselineSearch);
-        assertContainsProductName(baselineSearch.path("results"), "치즈");
+        System.out.println("[STEP-2] baseline 검색 검증 query=두부");
+        JsonNode baselineSearch = search("두부");
+        printSearchResults("BASELINE", "두부", baselineSearch);
+        assertContainsProductName(baselineSearch.path("results"), "두부");
 
         Thread.sleep(1100L);
-        System.out.println("[STEP-3] broken rollout 시작 dataPath=data/food-products_only10.json");
-        IndexRolloutResult broken = indexRolloutService.rollOutFromSourceData("data/food-products_only10.json");
+        System.out.println("[STEP-3] broken rollout 시작 dataPath=data/goods_template_only10.json");
+        IndexRolloutResult broken = indexRolloutService.rollOutFromSourceData("data/goods_template_only10.json");
         System.out.println("[BROKEN] oldIndex=" + broken.oldIndex() + ", newIndex=" + broken.newIndex());
 
-        System.out.println("[STEP-4] broken 검색 검증 query=치즈");
-        JsonNode brokenSearch = search("치즈");
-        printSearchResults("BROKEN", "치즈", brokenSearch);
-        assertNotContainsProductName(brokenSearch.path("results"), "치즈");
+        System.out.println("[STEP-4] broken 검색 검증 query=두부");
+        JsonNode brokenSearch = search("두부");
+        printSearchResults("BROKEN", "두부", brokenSearch);
+        assertNotContainsProductName(brokenSearch.path("results"), "두부");
 
         System.out.println("[STEP-5] restore candidates 조회");
         JsonNode candidates = listRestoreCandidates();
@@ -101,17 +101,17 @@ class IndexRestoreIntegrationTest extends RestApiIntegrationTestBase {
         assertEquals(broken.newIndex(), restoreResponse.path("oldIndex").asText());
         assertEquals(baseline.newIndex(), restoreResponse.path("restoredIndex").asText());
 
-        System.out.println("[STEP-7] rollback 후 검색 검증 query=치즈");
-        JsonNode restoredSearch = search("치즈");
-        printSearchResults("RESTORED", "치즈", restoredSearch);
-        assertContainsProductName(restoredSearch.path("results"), "치즈");
+        System.out.println("[STEP-7] rollback 후 검색 검증 query=두부");
+        JsonNode restoredSearch = search("두부");
+        printSearchResults("RESTORED", "두부", restoredSearch);
+        assertContainsProductName(restoredSearch.path("results"), "두부");
     }
 
     @Test
     void candidatesApi는_복구가능한_인덱스목록을_최신순으로_반환한다() throws Exception {
         IndexRolloutResult baseline = indexRolloutService.rollOutFromSourceData();
         Thread.sleep(1100L);
-        IndexRolloutResult broken = indexRolloutService.rollOutFromSourceData("data/food-products_only10.json");
+        IndexRolloutResult broken = indexRolloutService.rollOutFromSourceData("data/goods_template_only10.json");
 
         JsonNode response = listRestoreCandidates();
         JsonNode candidates = response.path("candidates");
@@ -208,8 +208,8 @@ class IndexRestoreIntegrationTest extends RestApiIntegrationTestBase {
             System.out.println("[SEARCH-" + stage + "-HIT] rank=" + (i + 1)
                     + ", score=" + hit.path("score").asDouble()
                     + ", id=" + hit.path("id").asText()
-                    + ", name=" + source.path("product_name").asText()
-                    + ", category=" + source.path("category").asText());
+                    + ", name=" + source.path("goods_name").asText()
+                    + ", category=" + source.path("lev3_category_id_name").asText());
         }
     }
 

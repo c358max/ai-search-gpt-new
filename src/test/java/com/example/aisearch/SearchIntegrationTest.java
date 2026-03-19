@@ -115,10 +115,11 @@ class SearchIntegrationTest extends ElasticsearchIntegrationTestBase {
 
     @Test
     void categoryFilterShouldReturnOnlyRequestedCategories() {
-        ProductSearchRequest request = new ProductSearchRequest(null, null, List.of(1, 2, 3), null);
+        List<Integer> expectedCategoryIds = List.of(5638, 5648, 5698);
+        ProductSearchRequest request = new ProductSearchRequest(null, null, expectedCategoryIds, null);
         List<SearchHitResult> results = productSearchService.searchPage(request, pageRequest(1, 10)).results();
 
-        System.out.println("[CATEGORY_FILTER] categories=1,2,3");
+        System.out.println("[CATEGORY_FILTER] categories=" + expectedCategoryIds);
         results.forEach(hit -> System.out.printf(
                 "id=%s, name=%s, categoryId=%s, price=%s%n",
                 hit.id(),
@@ -129,9 +130,8 @@ class SearchIntegrationTest extends ElasticsearchIntegrationTestBase {
 
         Assertions.assertFalse(results.isEmpty(), "카테고리 필터 결과는 비어있으면 안 됩니다.");
         Assertions.assertTrue(results.stream().allMatch(hit -> {
-            Integer categoryId = asInteger(hit.source(), "lev3_category_id");
-            return categoryId != null && List.of(1, 2, 3).contains(categoryId);
-        }), "모든 결과의 lev3_category_id는 1,2,3 중 하나여야 합니다.");
+            return containsAnyCategoryId(hit.source(), "lev3_category_id", expectedCategoryIds);
+        }), "모든 결과의 lev3_category_id는 요청한 카테고리 중 하나여야 합니다.");
     }
 
     @Test
@@ -159,14 +159,14 @@ class SearchIntegrationTest extends ElasticsearchIntegrationTestBase {
     @Test
     void keywordCategoryAndPriceFilterShouldReturnMatchingResults() {
         ProductSearchRequest request = new ProductSearchRequest(
-                "건강한 간식",
-                new SearchPrice(5000, 30000),
-                List.of(1),
+                "유부초밥",
+                new SearchPrice(3000, 10000),
+                List.of(5642),
                 SearchSortOption.RELEVANCE_DESC
         );
         List<SearchHitResult> results = productSearchService.searchPage(request, pageRequest(1, 10)).results();
 
-        System.out.println("[COMBINED_FILTER] query=건강한 간식, category=1, min=5000, max=30000");
+        System.out.println("[COMBINED_FILTER] query=유부초밥, category=5642, min=3000, max=10000");
         results.forEach(hit -> System.out.printf(
                 "id=%s, score=%s, name=%s, categoryId=%s, price=%s%n",
                 hit.id(),
@@ -178,22 +178,20 @@ class SearchIntegrationTest extends ElasticsearchIntegrationTestBase {
 
         Assertions.assertFalse(results.isEmpty(), "복합 조건 결과는 비어있으면 안 됩니다.");
         Assertions.assertTrue(results.stream().allMatch(hit -> {
-            Integer categoryId = asInteger(hit.source(), "lev3_category_id");
             Integer priceValue = asInteger(hit.source(), "sale_price");
-            return categoryId != null
-                    && categoryId == 1
+            return containsCategoryId(hit.source(), "lev3_category_id", 5642)
                     && priceValue != null
-                    && priceValue >= 5000
-                    && priceValue <= 30000;
+                    && priceValue >= 3000
+                    && priceValue <= 10000;
         }), "모든 결과가 카테고리/가격 조건을 충족해야 합니다.");
     }
 
     @Test
     void priceAscSortShouldOrderByPrice() {
         ProductSearchRequest request = new ProductSearchRequest(
-                "간식",
+                "유부초밥",
                 new SearchPrice(0, 30000),
-                List.of(1, 2, 3),
+                List.of(5642),
                 SearchSortOption.PRICE_ASC
         );
 
@@ -206,9 +204,9 @@ class SearchIntegrationTest extends ElasticsearchIntegrationTestBase {
     @Test
     void priceDescSortShouldOrderByPrice() {
         ProductSearchRequest request = new ProductSearchRequest(
-                "간식",
+                "유부초밥",
                 new SearchPrice(0, 30000),
-                List.of(1, 2, 3),
+                List.of(5642),
                 SearchSortOption.PRICE_DESC
         );
 
@@ -245,15 +243,15 @@ class SearchIntegrationTest extends ElasticsearchIntegrationTestBase {
     @Test
     void pageAndSizeShouldReturnStableSlicesInEngineSort() {
         ProductSearchRequest page1Request = new ProductSearchRequest(
-                "간식",
+                "유부초밥",
                 new SearchPrice(0, 30000),
-                List.of(1, 2, 3),
+                List.of(5642),
                 SearchSortOption.PRICE_ASC
         );
         ProductSearchRequest page2Request = new ProductSearchRequest(
-                "간식",
+                "유부초밥",
                 new SearchPrice(0, 30000),
-                List.of(1, 2, 3),
+                List.of(5642),
                 SearchSortOption.PRICE_ASC
         );
 
@@ -366,6 +364,25 @@ class SearchIntegrationTest extends ElasticsearchIntegrationTestBase {
             return number.intValue();
         }
         return null;
+    }
+
+    private boolean containsCategoryId(Map<String, Object> source, String key, int expectedCategoryId) {
+        return containsAnyCategoryId(source, key, List.of(expectedCategoryId));
+    }
+
+    private boolean containsAnyCategoryId(Map<String, Object> source, String key, List<Integer> expectedCategoryIds) {
+        Object value = source.get(key);
+        if (value instanceof Number number) {
+            return expectedCategoryIds.contains(number.intValue());
+        }
+        if (value instanceof List<?> values) {
+            return values.stream()
+                    .filter(Number.class::isInstance)
+                    .map(Number.class::cast)
+                    .map(Number::intValue)
+                    .anyMatch(expectedCategoryIds::contains);
+        }
+        return false;
     }
 
     private List<Integer> extractPrices(List<SearchHitResult> results) {

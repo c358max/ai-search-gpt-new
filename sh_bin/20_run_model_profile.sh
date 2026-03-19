@@ -10,16 +10,16 @@ java_major_version() {
   "$1" -version 2>&1 | sed -n 's/.*version "\(1\.\)\{0,1\}\([0-9][0-9]*\).*/\2/p' | head -n 1
 }
 
-resolve_java_home_from_bin() {
-  local java_bin_path="${1:-}"
-  local java_dir=""
-  if [ -z "${java_bin_path}" ]; then
+java_bin_from_home() {
+  local java_home="${1:-}"
+  if [ -z "${java_home}" ]; then
     return 1
   fi
-
-  java_dir=$(cd -P "${java_bin_path%/*}/.." > /dev/null 2>&1 && pwd)
-  if [ -n "${java_dir}" ] && [ -x "${java_dir}/bin/java" ]; then
-    printf '%s\n' "${java_dir}"
+  if [ ! -f "${java_home}/release" ]; then
+    return 1
+  fi
+  if [ -x "${java_home}/bin/java" ]; then
+    printf '%s\n' "${java_home}/bin/java"
     return 0
   fi
   return 1
@@ -28,31 +28,37 @@ resolve_java_home_from_bin() {
 ensure_java_21() {
   local java_cmd=""
   local java_major=""
-  local resolved_java_home=""
+  local macos_java_home=""
 
-  java_cmd=$(command -v java 2>/dev/null || true)
-  if [ -n "${java_cmd}" ]; then
+  if java_cmd=$(java_bin_from_home "${JAVA_HOME:-}" 2>/dev/null); then
     java_major=$(java_major_version "${java_cmd}")
     if [ -n "${java_major}" ] && [ "${java_major}" -ge 21 ]; then
-      resolved_java_home=$(resolve_java_home_from_bin "${java_cmd}" || true)
-      if [ -n "${resolved_java_home}" ]; then
-        export JAVA_HOME="${resolved_java_home}"
-        echo "[INFO] JAVA_HOME set from PATH Java (${JAVA_HOME})"
-        return 0
-      fi
+      echo "[INFO] using existing JAVA_HOME (${JAVA_HOME})"
+      return 0
     fi
   fi
 
   if command -v /usr/libexec/java_home >/dev/null 2>&1; then
-    resolved_java_home=$(/usr/libexec/java_home -v 21 2>/dev/null || true)
-    if [ -n "${resolved_java_home}" ]; then
-      export JAVA_HOME="${resolved_java_home}"
+    macos_java_home=$(/usr/libexec/java_home -v 21 2>/dev/null || true)
+    if [ -n "${macos_java_home}" ] && [ -x "${macos_java_home}/bin/java" ]; then
+      export JAVA_HOME="${macos_java_home}"
       echo "[INFO] JAVA_HOME set from /usr/libexec/java_home (${JAVA_HOME})"
       return 0
     fi
   fi
 
-  echo "[WARN] Java 21 not found automatically; using existing JAVA_HOME=${JAVA_HOME:-<unset>}"
+  java_cmd=$(command -v java 2>/dev/null || true)
+  if [ -n "${java_cmd}" ]; then
+    java_major=$(java_major_version "${java_cmd}")
+    if [ -n "${java_major}" ] && [ "${java_major}" -ge 21 ]; then
+      # PATH 상의 java가 이미 올바르면 설치 경로를 추측해 JAVA_HOME을 억지로 만들지 않는다.
+      unset JAVA_HOME || true
+      echo "[INFO] using PATH java (${java_cmd})"
+      return 0
+    fi
+  fi
+
+  echo "[WARN] Java 21 not found automatically; JAVA_HOME=${JAVA_HOME:-<unset>}, PATH java=${java_cmd:-<not found>}"
 }
 
 MODE="${1:-web}"

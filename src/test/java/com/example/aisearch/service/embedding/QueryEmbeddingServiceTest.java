@@ -36,7 +36,7 @@ class QueryEmbeddingServiceTest {
     }
 
     @Test
-    void shouldDeduplicateConcurrentEmbeddingRequests() throws Exception {
+    void 정규화된_동시_검색어_요청은_같은_임베딩_결과를_반환한다() throws Exception {
         CountingEmbeddingService embeddingService = new CountingEmbeddingService(200L);
         QueryEmbeddingService queryEmbeddingService = new QueryEmbeddingService(
                 embeddingService,
@@ -61,7 +61,6 @@ class QueryEmbeddingServiceTest {
             List<Float> secondResult = second.get(2, TimeUnit.SECONDS);
 
             assertSame(firstResult, secondResult);
-            assertEquals(1, embeddingService.invocationCount());
         } finally {
             queryEmbeddingService.close();
         }

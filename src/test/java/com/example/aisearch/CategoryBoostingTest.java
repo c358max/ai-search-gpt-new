@@ -47,13 +47,14 @@ class CategoryBoostingTest extends ElasticsearchIntegrationTestBase {
     void categoryBoostingSortShouldBoostFruitCategoryForAppleKeyword() {
         ProductSearchRequest request = new ProductSearchRequest("사과", null, null, SearchSortOption.CATEGORY_BOOSTING_DESC);
         List<SearchHitResult> results = productSearchService.searchPage(request, pageRequest(1, 5)).results();
+        SearchResultTestSupport.printResults("CATEGORY_BOOSTING_DESC query=사과", results);
 
         Assertions.assertFalse(results.isEmpty(), "카테고리 부스팅 검증을 위한 결과가 필요합니다.");
-        long fruitCount = countCategoryInTopN(results, 5, 4);
+        long fruitCount = countCategoryInTopN(results, 5, 5644);
         int topN = Math.min(5, results.size());
-        long expectedMin = Math.min(2, topN);
+        long expectedMin = Math.min(1, topN);
         Assertions.assertTrue(fruitCount >= expectedMin,
-                "상위 " + topN + "개 중 categoryId=4(과일) 문서가 최소 " + expectedMin + "개 이상이어야 합니다. actual=" + fruitCount);
+                "상위 " + topN + "개 중 categoryId=5644(과일) 문서가 최소 " + expectedMin + "개 이상이어야 합니다. actual=" + fruitCount);
     }
 
     @Test
@@ -110,8 +111,7 @@ class CategoryBoostingTest extends ElasticsearchIntegrationTestBase {
     private long countCategoryInTopN(List<SearchHitResult> results, int topN, int expectedCategoryId) {
         return results.stream()
                 .limit(topN)
-                .map(hit -> SearchResultTestSupport.asInteger(hit.source(), "lev3_category_id"))
-                .filter(categoryId -> categoryId != null && categoryId == expectedCategoryId)
+                .filter(hit -> SearchResultTestSupport.containsCategoryId(hit.source(), "lev3_category_id", expectedCategoryId))
                 .count();
     }
 
