@@ -2,6 +2,13 @@
 # 기본 검색 (page=1, size 기본값=5)
 GET http://localhost:8080/api/search?q=어린이%20간식
 
+### Model1 : e5-small-ko-v2
+GET http://localhost:8091/api/search?q=어린이%20간식
+### Model2 : kure-v1
+GET http://localhost:8092/api/search?q=어린이%20간식
+### Model3 : bge-m3
+GET http://localhost:8093/api/search?q=어린이%20간식
+
 ### size 지정 검색
 GET http://localhost:8080/api/search?q=바다%20가득한%20해산물&page=1&size=2
 

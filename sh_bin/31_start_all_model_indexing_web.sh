@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_DIR="${LOG_DIR:-/tmp/ai-search-model-logs}"
 PID_DIR="${PID_DIR:-/tmp/ai-search-model-pids}"
 NAMESPACE="${NAMESPACE:-ai-search}"
-ALIAS_WAIT_SECONDS="${ALIAS_WAIT_SECONDS:-240}"
+ALIAS_WAIT_SECONDS="${ALIAS_WAIT_SECONDS:-420}"
 
 MODELS=(
   "e5-small-ko-v2"
