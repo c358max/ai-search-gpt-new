@@ -18,7 +18,7 @@
 6. `./sh_bin/check/02_check_elasticsearch_nori_plugin.sh`
 7. `./sh_bin/setup/06_prepare_djl_truststore.sh` (1회성)
 8. `./sh_bin/check/03_check_elasticsearch_status.sh`
-9. `./gradlew test --tests com.example.aisearch.integration.SearchIntegrationTest`
+9. `./gradlew test --tests com.example.aisearch.integration.search.SearchIntegrationTest`
 
 상세 절차는 `sh_bin/readme.md` 참고.
 

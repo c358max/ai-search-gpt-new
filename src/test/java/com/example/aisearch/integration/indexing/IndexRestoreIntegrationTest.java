@@ -1,4 +1,4 @@
-package com.example.aisearch.integration;
+package com.example.aisearch.integration.indexing;
 
 import com.example.aisearch.integration.helper.RestApiIntegrationTestBase;
 import com.example.aisearch.integration.helper.SearchResultTestSupport;

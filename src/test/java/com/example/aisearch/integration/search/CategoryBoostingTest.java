@@ -1,4 +1,4 @@
-package com.example.aisearch.integration;
+package com.example.aisearch.integration.search;
 
 import com.example.aisearch.integration.helper.ElasticsearchIntegrationTestBase;
 import com.example.aisearch.integration.helper.SearchResultTestSupport;

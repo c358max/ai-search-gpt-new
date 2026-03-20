@@ -1,4 +1,4 @@
-package com.example.aisearch.integration;
+package com.example.aisearch.integration.search;
 
 import com.example.aisearch.integration.helper.ElasticsearchIntegrationTestBase;
 import com.example.aisearch.model.SearchHitResult;
@@ -219,15 +219,15 @@ class SearchIntegrationTest extends ElasticsearchIntegrationTestBase {
     @Test
     void defaultSortShouldMatchExplicitRelevanceSort() {
         ProductSearchRequest defaultSortRequest = new ProductSearchRequest(
-                "건강한 간식",
-                new SearchPrice(0, 30000),
-                List.of(1, 2, 3),
+                "유부초밥",
+                new SearchPrice(3000, 10000),
+                List.of(5642),
                 null
         );
         ProductSearchRequest explicitRelevanceRequest = new ProductSearchRequest(
-                "건강한 간식",
-                new SearchPrice(0, 30000),
-                List.of(1, 2, 3),
+                "유부초밥",
+                new SearchPrice(3000, 10000),
+                List.of(5642),
                 SearchSortOption.RELEVANCE_DESC
         );
 

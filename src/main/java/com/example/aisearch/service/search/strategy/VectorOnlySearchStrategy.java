@@ -3,18 +3,17 @@ package com.example.aisearch.service.search.strategy;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
-import co.elastic.clients.json.JsonData;
 import com.example.aisearch.config.AiSearchProperties;
 import com.example.aisearch.model.search.ProductSearchRequest;
 import com.example.aisearch.model.search.SearchPageResult;
 import com.example.aisearch.service.embedding.QueryEmbeddingService;
 import com.example.aisearch.service.embedding.QueryEmbeddingUnavailableException;
-import com.example.aisearch.service.search.categoryboost.policy.CategoryBoostBetaTuner;
 import com.example.aisearch.service.search.categoryboost.policy.CategoryBoostingDecider;
 import com.example.aisearch.service.search.categoryboost.policy.CategoryBoostingResult;
 import com.example.aisearch.service.search.query.HybridBaseQueryBuilder;
 import com.example.aisearch.service.search.query.SearchFilterQueryBuilder;
 import com.example.aisearch.service.search.strategy.mapper.DefaultSearchResponseMapper;
+import com.example.aisearch.service.search.strategy.request.ElasticsearchSearchRequestBuilder;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
@@ -37,31 +36,16 @@ import java.util.Map;
 @Component
 @ConditionalOnProperty(prefix = "ai-search.search", name = "mode", havingValue = "vector-only")
 public class VectorOnlySearchStrategy implements SearchStrategy {
-
     private static final Logger log = LoggerFactory.getLogger(VectorOnlySearchStrategy.class);
-
-    private static final String VECTOR_ONLY_SCRIPT = """
-            double vectorScore = (cosineSimilarity(params.query_vector, 'product_vector') + 1.0) / 2.0;
-            if (vectorScore < params.min_score_threshold) return 0.0;
-            double categoryBoost = 0.0;
-            if (params.category_boost_by_id != null && doc['primary_lev3_category_id'].size() != 0) {
-              String categoryKey = String.valueOf(doc['primary_lev3_category_id'].value);
-              def rawBoost = params.category_boost_by_id.get(categoryKey);
-              if (rawBoost != null) {
-                categoryBoost = ((Number) rawBoost).doubleValue();
-              }
-            }
-            return vectorScore * (1.0 + params.beta * categoryBoost);
-            """;
 
     private final ElasticsearchClient client;
     private final AiSearchProperties properties;
     private final QueryEmbeddingService queryEmbeddingService;
     private final SearchFilterQueryBuilder filterQueryBuilder;
     private final HybridBaseQueryBuilder hybridBaseQueryBuilder;
+    private final ElasticsearchSearchRequestBuilder searchRequestBuilder;
     private final DefaultSearchResponseMapper searchResponseMapper;
     private final CategoryBoostingDecider categoryBoostingDecider;
-    private final CategoryBoostBetaTuner categoryBoostBetaTuner;
 
     public VectorOnlySearchStrategy(
             ElasticsearchClient client,
@@ -69,18 +53,18 @@ public class VectorOnlySearchStrategy implements SearchStrategy {
             QueryEmbeddingService queryEmbeddingService,
             SearchFilterQueryBuilder filterQueryBuilder,
             HybridBaseQueryBuilder hybridBaseQueryBuilder,
+            ElasticsearchSearchRequestBuilder searchRequestBuilder,
             DefaultSearchResponseMapper searchResponseMapper,
-            CategoryBoostingDecider categoryBoostingDecider,
-            CategoryBoostBetaTuner categoryBoostBetaTuner
+            CategoryBoostingDecider categoryBoostingDecider
     ) {
         this.client = client;
         this.properties = properties;
         this.queryEmbeddingService = queryEmbeddingService;
         this.filterQueryBuilder = filterQueryBuilder;
         this.hybridBaseQueryBuilder = hybridBaseQueryBuilder;
+        this.searchRequestBuilder = searchRequestBuilder;
         this.searchResponseMapper = searchResponseMapper;
         this.categoryBoostingDecider = categoryBoostingDecider;
-        this.categoryBoostBetaTuner = categoryBoostBetaTuner;
     }
 
     @Override
@@ -98,31 +82,16 @@ public class VectorOnlySearchStrategy implements SearchStrategy {
     private SearchPageResult vectorOnlySearch(ProductSearchRequest request, Pageable pageable) throws IOException {
         CategoryBoostingResult decision = categoryBoostingDecider.decide(request);
         Query baseQuery = filterQueryBuilder.buildRootQuery(request);
-
         try {
-            co.elastic.clients.elasticsearch.core.SearchRequest esSearchRequest =
-                    co.elastic.clients.elasticsearch.core.SearchRequest.of(s -> s
-                            .index(getReadAlias())
-                            .query(q -> q.scriptScore(ss -> ss
-                                    .query(baseQuery)
-                                    .script(sc -> sc.inline(i -> {
-                                        i.lang("painless")
-                                                .source(VECTOR_ONLY_SCRIPT)
-                                                .params("query_vector", JsonData.of(queryEmbeddingService.toQueryEmbedding(request.query())))
-                                                .params("min_score_threshold", JsonData.of(properties.minScoreThreshold()))
-                                                .params("beta", JsonData.of(categoryBoostBetaTuner.getBeta()));
-                                        if (decision.applyCategoryBoost()) {
-                                            i.params("category_boost_by_id", JsonData.of(decision.categoryBoostById()));
-                                        }
-                                        return i;
-                                    }))
-                            ))
-                            .sort(decision.sortOptions())
-                            .trackScores(true)
-                            .from((int) pageable.getOffset())
-                            .size(pageable.getPageSize())
-                            .minScore(properties.minScoreThreshold())
-                    );
+            // 사용자 질의를 임베딩 벡터로 변환해 cosineSimilarity 계산에 사용한다.
+            co.elastic.clients.elasticsearch.core.SearchRequest esSearchRequest = searchRequestBuilder.buildHybridRequest(
+                    getReadAlias(),
+                    baseQuery,
+                    decision,
+                    queryEmbeddingService.toQueryEmbedding(request.query()),
+                    (int) pageable.getOffset(),
+                    pageable.getPageSize()
+            );
 
             SearchResponse<Map> response = client.search(esSearchRequest, Map.class);
             return searchResponseMapper.toPageResult(response, pageable);
@@ -132,17 +101,17 @@ public class VectorOnlySearchStrategy implements SearchStrategy {
         }
     }
 
-    private SearchPageResult filterOnlySearch(ProductSearchRequest request, Pageable pageable) throws IOException {
-        co.elastic.clients.elasticsearch.core.SearchRequest esSearchRequest =
-                co.elastic.clients.elasticsearch.core.SearchRequest.of(s -> s
-                        .index(getReadAlias())
-                        .query(filterQueryBuilder.buildRootQuery(request))
-                        .sort(request.sortOption().toSortOptions())
-                        .trackScores(true)
-                        .from((int) pageable.getOffset())
-                        .size(pageable.getPageSize())
-                );
-
+    private SearchPageResult filterOnlySearch(
+            ProductSearchRequest request,
+            Pageable pageable
+    ) throws IOException {
+        co.elastic.clients.elasticsearch.core.SearchRequest esSearchRequest = searchRequestBuilder.buildFilterOnlyRequest(
+                getReadAlias(),
+                filterQueryBuilder.buildRootQuery(request),
+                request.sortOption(),
+                (int) pageable.getOffset(),
+                pageable.getPageSize()
+        );
         SearchResponse<Map> response = client.search(esSearchRequest, Map.class);
         return searchResponseMapper.toPageResult(response, pageable);
     }
@@ -156,16 +125,13 @@ public class VectorOnlySearchStrategy implements SearchStrategy {
                 request,
                 filterQueryBuilder.buildFilterQuery(request)
         );
-        co.elastic.clients.elasticsearch.core.SearchRequest esSearchRequest =
-                co.elastic.clients.elasticsearch.core.SearchRequest.of(s -> s
-                        .index(getReadAlias())
-                        .query(lexicalFallbackQuery)
-                        .sort(decision.sortOptions())
-                        .trackScores(true)
-                        .from((int) pageable.getOffset())
-                        .size(pageable.getPageSize())
-                );
-
+        co.elastic.clients.elasticsearch.core.SearchRequest esSearchRequest = searchRequestBuilder.buildFilterOnlyRequest(
+                getReadAlias(),
+                lexicalFallbackQuery,
+                decision.searchSortOption(),
+                (int) pageable.getOffset(),
+                pageable.getPageSize()
+        );
         SearchResponse<Map> response = client.search(esSearchRequest, Map.class);
         return searchResponseMapper.toPageResult(response, pageable);
     }
@@ -178,3 +144,4 @@ public class VectorOnlySearchStrategy implements SearchStrategy {
         return readAlias;
     }
 }
+

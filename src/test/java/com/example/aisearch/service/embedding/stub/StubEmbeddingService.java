@@ -1,4 +1,4 @@
-package com.example.aisearch.support;
+package com.example.aisearch.service.embedding.stub;
 
 import com.example.aisearch.service.embedding.EmbeddingService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -9,10 +9,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * 통합 테스트에서 실제 DJL 모델 대신 사용하는 결정론적 stub 임베딩 구현.
+ */
 @Primary
 @Service
 @ConditionalOnProperty(prefix = "ai-search.embedding", name = "provider", havingValue = "stub")
-public class TestHashEmbeddingService implements EmbeddingService {
+public class StubEmbeddingService implements EmbeddingService {
 
     private static final int DIMENSIONS = 64;
 

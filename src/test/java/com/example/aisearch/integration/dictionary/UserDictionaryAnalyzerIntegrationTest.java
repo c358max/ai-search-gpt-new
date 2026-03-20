@@ -1,11 +1,8 @@
 package com.example.aisearch.integration.dictionary;
-
-import com.example.aisearch.support.RequiresElasticsearch;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-@RequiresElasticsearch
 class UserDictionaryAnalyzerIntegrationTest extends DictionaryIntegrationTestBase {
 
     @Test

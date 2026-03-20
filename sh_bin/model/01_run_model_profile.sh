@@ -77,7 +77,7 @@ case "${MODE}" in
     ;;
   *)
     echo "[ERROR] unsupported mode: ${MODE}"
-    echo "[USAGE] ./sh_bin/model/01_run_model_profile.sh <web|indexing|indexing-web> <e5-small-ko-v2|e5-small-ko|kure-v1|koe5|bge-m3>"
+    echo "[USAGE] ./sh_bin/model/01_run_model_profile.sh <web|indexing|indexing-web> <e5-small-ko-v2|e5-small-ko|kure-v1|bge-m3>"
     exit 1
     ;;
 esac
@@ -95,17 +95,13 @@ case "${MODEL_KEY}" in
     PROFILE="model-kure-v1"
     DEFAULT_PORT=8092
     ;;
-  koe5)
-    PROFILE="model-koe5"
-    DEFAULT_PORT=8095
-    ;;
   bge-m3)
     PROFILE="model-bge-m3"
     DEFAULT_PORT=8093
     ;;
   *)
     echo "[ERROR] unsupported model key: ${MODEL_KEY}"
-    echo "[USAGE] ./sh_bin/model/01_run_model_profile.sh <web|indexing|indexing-web> <e5-small-ko-v2|e5-small-ko|kure-v1|koe5|bge-m3>"
+    echo "[USAGE] ./sh_bin/model/01_run_model_profile.sh <web|indexing|indexing-web> <e5-small-ko-v2|e5-small-ko|kure-v1|bge-m3>"
     exit 1
     ;;
 esac

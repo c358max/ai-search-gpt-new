@@ -1,6 +1,4 @@
 ai-search:
-  embedding:
-    provider: djl
   model-key: bge-m3
   model-path-segment: bge-m3
 

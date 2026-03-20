@@ -34,8 +34,13 @@ public class IndexingRunner implements CommandLineRunner {
     @Override
     public void run(String... args) {
         IndexRolloutResult result = indexRolloutService.rollOutFromSourceData();
-        log.info("Index rollout complete. oldIndex={}, newIndex={}, indexedCount={}",
-                result.oldIndex(), result.newIndex(), result.indexedCount());
+        log.info("Index rollout complete. oldIndex={}, newIndex={}, indexedCount={}, cleanupSucceeded={}, cleanupDeletedIndices={}, cleanupErrorMessage={}",
+                result.oldIndex(),
+                result.newIndex(),
+                result.indexedCount(),
+                result.cleanupSucceeded(),
+                result.cleanupDeletedIndices(),
+                result.cleanupErrorMessage());
 
         if (environment.acceptsProfiles("indexing")) {
             // 색인 전용 실행은 배치 작업 완료 후 종료한다.

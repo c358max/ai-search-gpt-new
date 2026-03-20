@@ -243,7 +243,7 @@ keytool -importcert -noprompt \
 3. truststore 내부 항목 확인(선택)
    - `./sh_bin/check/04_check_djl_truststore.sh`
 4. 테스트 실행
-   - `./gradlew test --tests com.example.aisearch.integration.SearchIntegrationTest`
+   - `./gradlew test --tests com.example.aisearch.integration.search.SearchIntegrationTest`
 
 ---
 

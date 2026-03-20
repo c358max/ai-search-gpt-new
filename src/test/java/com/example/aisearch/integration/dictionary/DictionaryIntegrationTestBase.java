@@ -2,7 +2,6 @@ package com.example.aisearch.integration.dictionary;
 
 import com.example.aisearch.integration.helper.ElasticsearchIntegrationTestBase;
 import com.example.aisearch.service.indexing.orchestration.IndexRolloutService;
-import com.example.aisearch.support.RequiresElasticsearch;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
@@ -17,7 +16,6 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RequiresElasticsearch
 @SpringBootTest(properties = {
         "ai-search.index-name=dictionary-it-products",
         "ai-search.read-alias=dictionary-it-products-read",
