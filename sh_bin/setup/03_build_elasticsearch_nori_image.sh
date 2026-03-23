@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SH_BIN_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 RESOURCE_DIR="${SCRIPT_DIR}/resources"
 DOCKERFILE_PATH="${DOCKERFILE_PATH:-${RESOURCE_DIR}/es-nori.Dockerfile}"
+BUILD_CONTEXT="${BUILD_CONTEXT:-${RESOURCE_DIR}}"
 ES_VERSION="${ES_VERSION:-8.13.4}"
 ES_CUSTOM_IMAGE="${ES_CUSTOM_IMAGE:-ai-search-es:8.13.4-nori}"
 PLUGIN_ZIP="analysis-nori-${ES_VERSION}.zip"
@@ -44,9 +45,10 @@ echo "[INFO] Building custom Elasticsearch image with analysis-nori"
 echo "[INFO] image=${ES_CUSTOM_IMAGE}"
 echo "[INFO] es_version=${ES_VERSION}"
 echo "[INFO] dockerfile=${DOCKERFILE_PATH}"
+echo "[INFO] build_context=${BUILD_CONTEXT}"
 
 set -x
-docker build --build-arg ES_VERSION="${ES_VERSION}" -f "${DOCKERFILE_PATH}" -t "${ES_CUSTOM_IMAGE}" "${SH_BIN_DIR}"
+docker build --build-arg ES_VERSION="${ES_VERSION}" -f "${DOCKERFILE_PATH}" -t "${ES_CUSTOM_IMAGE}" "${BUILD_CONTEXT}"
 set +x
 
 echo "[OK] Built image: ${ES_CUSTOM_IMAGE}"
