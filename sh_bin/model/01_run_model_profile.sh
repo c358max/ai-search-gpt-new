@@ -87,10 +87,6 @@ case "${MODEL_KEY}" in
     PROFILE="model-e5-small-ko-v2"
     DEFAULT_PORT=8091
     ;;
-  e5-small-ko)
-    PROFILE="model-e5-small-ko"
-    DEFAULT_PORT=8094
-    ;;
   kure-v1)
     PROFILE="model-kure-v1"
     DEFAULT_PORT=8092
