@@ -92,6 +92,9 @@ public class FoodProduct {
     // 추천 상품 여부
     @JsonProperty("is_recommended_goods")
     private Boolean recommendedGoods;
+    // 신상품 여부
+    @JsonProperty("is_new_goods")
+    private Boolean newGoods;
 
     public FoodProduct() {
     }
@@ -125,7 +128,8 @@ public class FoodProduct {
             Double satisfactionScore,
             Integer satisfactionCount,
             Boolean bestGoods,
-            Boolean recommendedGoods
+            Boolean recommendedGoods,
+            Boolean newGoods
     ) {
         this.id = id;
         this.goodsName = goodsName;
@@ -156,6 +160,7 @@ public class FoodProduct {
         this.satisfactionCount = satisfactionCount;
         this.bestGoods = bestGoods;
         this.recommendedGoods = recommendedGoods;
+        this.newGoods = newGoods;
     }
 
     public String getId() {
@@ -388,6 +393,14 @@ public class FoodProduct {
 
     public void setRecommendedGoods(Boolean recommendedGoods) {
         this.recommendedGoods = recommendedGoods;
+    }
+
+    public Boolean getNewGoods() {
+        return newGoods;
+    }
+
+    public void setNewGoods(Boolean newGoods) {
+        this.newGoods = newGoods;
     }
 
     public String toEmbeddingText() {

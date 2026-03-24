@@ -82,6 +82,7 @@
       "popularity_score": {"type": "double"},
       "satisfaction_score": {"type": "double"},
       "satisfaction_count": {"type": "integer"},
+      "is_new_goods": {"type": "boolean"},
       "product_vector": {
         "type": "dense_vector",
         "dims": "__DIMS__",

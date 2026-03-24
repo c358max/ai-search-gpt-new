@@ -44,6 +44,7 @@ public class FoodProductDocumentMapper {
         doc.put("satisfaction_count", food.getSatisfactionCount());
         doc.put("is_best_goods", food.getBestGoods());
         doc.put("is_recommended_goods", food.getRecommendedGoods());
+        doc.put("is_new_goods", food.getNewGoods());
         doc.put("product_vector", embedding);
         return new IndexDocument(food.getId(), doc);
     }

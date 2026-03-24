@@ -65,6 +65,16 @@ public enum SearchSortOption {
             );
         }
     },
+    NEW_GOODS_DESC {
+        @Override
+        public List<SortOptions> toSortOptions() {
+            return List.of(
+                    fieldSort("is_new_goods", SortOrder.Desc),
+                    scoreSort(SortOrder.Desc),
+                    fieldSort("id", SortOrder.Asc)
+            );
+        }
+    },
     RATING_DESC {
         @Override
         public List<SortOptions> toSortOptions() {
