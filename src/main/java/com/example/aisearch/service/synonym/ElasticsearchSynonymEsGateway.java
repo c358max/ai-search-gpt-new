@@ -4,6 +4,10 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch.synonyms.SynonymRule;
 import co.elastic.clients.transport.TransportException;
+import org.apache.http.util.EntityUtils;
+import org.elasticsearch.client.Request;
+import org.elasticsearch.client.ResponseException;
+import org.elasticsearch.client.RestClient;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -14,16 +18,24 @@ import java.util.stream.IntStream;
 public class ElasticsearchSynonymEsGateway implements SynonymEsGateway {
 
     private final ElasticsearchClient client;
+    private final RestClient restClient;
 
-    public ElasticsearchSynonymEsGateway(ElasticsearchClient client) {
+    public ElasticsearchSynonymEsGateway(ElasticsearchClient client, RestClient restClient) {
         this.client = client;
+        this.restClient = restClient;
     }
 
     @Override
     public boolean existsSynonyms(String synonymsSetId) {
         try {
-            client.synonyms().getSynonym(request -> request.id(synonymsSetId));
+            // getSynonym 응답 디코드 이슈를 피하기 위해 존재 여부만 저수준 HTTP status로 확인한다.
+            restClient.performRequest(new Request("GET", "/_synonyms/" + synonymsSetId));
             return true;
+        } catch (ResponseException e) {
+            if (e.getResponse().getStatusLine().getStatusCode() == 404) {
+                return false;
+            }
+            throw new IllegalStateException(buildExistsFailureMessage(synonymsSetId, e), e);
         } catch (TransportException e) {
             if (isNotFound(e)) {
                 return false;
@@ -94,6 +106,20 @@ public class ElasticsearchSynonymEsGateway implements SynonymEsGateway {
             current = current.getCause();
         }
         return false;
+    }
+
+    private String buildExistsFailureMessage(String synonymsSetId, ResponseException e) {
+        int status = e.getResponse().getStatusLine().getStatusCode();
+        String body = "<empty>";
+        try {
+            // Elasticsearch가 내려준 실제 응답 본문을 함께 남겨야 shard/license 문제를 빠르게 진단할 수 있다.
+            if (e.getResponse().getEntity() != null) {
+                body = EntityUtils.toString(e.getResponse().getEntity());
+            }
+        } catch (IOException ignored) {
+            body = "<failed to read body>";
+        }
+        return "동의어 세트 조회 실패: " + synonymsSetId + " status=" + status + " body=" + body;
     }
 
     private boolean isNotFound(Exception e) {
