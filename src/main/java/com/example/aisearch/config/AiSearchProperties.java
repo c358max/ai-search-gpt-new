@@ -11,6 +11,10 @@ public record AiSearchProperties(
     String username,
     String password,
     /**
+     * 현재 실행 중인 모델 식별자
+     */
+    String modelKey,
+    /**
      * 색인 베이스명 (버전 인덱스 prefix)
      */
     String indexName,

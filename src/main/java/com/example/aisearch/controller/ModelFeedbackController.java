@@ -26,7 +26,14 @@ public class ModelFeedbackController {
 
     @PostMapping("/api/model-feedback")
     public ModelFeedbackResponseDto save(@Valid @RequestBody ModelFeedbackSaveRequestDto request) {
-        return ModelFeedbackResponseDto.from(modelFeedbackService.save(request.query(), request.score()));
+        return ModelFeedbackResponseDto.from(
+                modelFeedbackService.save(
+                        request.query(),
+                        request.score(),
+                        request.sortOption(),
+                        request.searchDurationMillis()
+                )
+        );
     }
 
     @GetMapping("/api/model-feedback")

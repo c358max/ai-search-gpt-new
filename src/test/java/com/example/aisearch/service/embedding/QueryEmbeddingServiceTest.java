@@ -89,6 +89,7 @@ class QueryEmbeddingServiceTest {
                 "http://localhost:9200",
                 "elastic",
                 "password",
+                "test-model",
                 "food-products",
                 "food-products-read",
                 "food-synonyms",

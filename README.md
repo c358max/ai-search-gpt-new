@@ -28,6 +28,16 @@
 
 통합 테스트는 로컬 Elasticsearch, truststore, 샘플 색인 환경이 준비된 상태를 전제로 합니다.
 
+## 모델 평가 저장소
+- 모델 비교 화면의 평점 저장은 이제 MySQL을 사용합니다.
+- 현재 기본 설정은 개발 DB에 직접 연결하도록 되어 있습니다.
+- 런타임 환경변수로 필요 시 다른 DB로 변경할 수 있습니다:
+  - `AI_SEARCH_MYSQL_URL`
+  - `AI_SEARCH_MYSQL_USERNAME`
+  - `AI_SEARCH_MYSQL_PASSWORD`
+- 기본값은 `jdbc:log4jdbc:mysql://db-665ft-kr.vpc-pub-cdb.ntruss.com:3306/pulmuone_dev?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&allowMultiQueries=true` 기준입니다.
+- 애플리케이션 시작 시 [schema.sql](/ai-search-gpt/src/main/resources/schema.sql)로 `model_feedback_event` 테이블을 자동 생성합니다.
+
 ## 모델별 실행 프로필
 - `model-e5-small-ko-v2`: `./gradlew bootRun --args='--spring.profiles.active=model-e5-small-ko-v2'`
 - `model-kure-v1`: `./gradlew bootRun --args='--spring.profiles.active=model-kure-v1'`

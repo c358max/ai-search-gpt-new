@@ -1,37 +1,40 @@
 package com.example.aisearch.service.feedback;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class ModelFeedbackService {
 
-    private final FeedbackAggregate overallAggregate = new FeedbackAggregate();
-    private final Map<String, FeedbackAggregate> queryAggregates = new ConcurrentHashMap<>();
+    private final ModelFeedbackRepository modelFeedbackRepository;
+    private final String modelName;
 
-    public FeedbackSummary save(String query, int score) {
+    public ModelFeedbackService(
+            ModelFeedbackRepository modelFeedbackRepository,
+            @Value("${ai-search.model-key:default}") String modelName
+    ) {
+        this.modelFeedbackRepository = modelFeedbackRepository;
+        this.modelName = modelName;
+    }
+
+    public FeedbackSummary save(String query, int score, String sortOption, Long searchDurationMillis) {
         validate(query, score);
+        String normalizedQuery = normalizeQuery(query);
+        String normalizedSortOption = normalizeSortOption(sortOption);
+        long normalizedSearchDurationMillis = normalizeSearchDurationMillis(searchDurationMillis);
 
-        overallAggregate.add(score);
-        FeedbackAggregate queryAggregate = queryAggregates.computeIfAbsent(query.trim(), key -> new FeedbackAggregate());
-        queryAggregate.add(score);
-
-        return new FeedbackSummary(query.trim(), queryAggregate.averageScore(), queryAggregate.ratingCount(), score);
+        modelFeedbackRepository.save(modelName, normalizedQuery, score, normalizedSortOption, normalizedSearchDurationMillis);
+        FeedbackSummary summary = modelFeedbackRepository.getByQuery(modelName, normalizedQuery);
+        return new FeedbackSummary(normalizedQuery, summary.averageScore(), summary.ratingCount(), score);
     }
 
     public FeedbackSummary getByQuery(String query) {
         String normalizedQuery = normalizeQuery(query);
-        FeedbackAggregate aggregate = queryAggregates.get(normalizedQuery);
-        if (aggregate == null) {
-            return new FeedbackSummary(normalizedQuery, 0.0, 0, 0);
-        }
-        return new FeedbackSummary(normalizedQuery, aggregate.averageScore(), aggregate.ratingCount(), 0);
+        return modelFeedbackRepository.getByQuery(modelName, normalizedQuery);
     }
 
     public FeedbackOverallSummary getOverall() {
-        return new FeedbackOverallSummary(overallAggregate.averageScore(), overallAggregate.ratingCount());
+        return modelFeedbackRepository.getOverall(modelName);
     }
 
     private void validate(String query, int score) {
@@ -47,24 +50,17 @@ public class ModelFeedbackService {
         return query == null ? "" : query.trim();
     }
 
-    private static final class FeedbackAggregate {
-        private long totalScore;
-        private long ratingCount;
-
-        synchronized void add(int score) {
-            totalScore += score;
-            ratingCount += 1;
+    private String normalizeSortOption(String sortOption) {
+        if (sortOption == null || sortOption.isBlank()) {
+            return "RELEVANCE_DESC";
         }
+        return sortOption.trim();
+    }
 
-        synchronized double averageScore() {
-            if (ratingCount == 0) {
-                return 0.0;
-            }
-            return (double) totalScore / ratingCount;
+    private long normalizeSearchDurationMillis(Long searchDurationMillis) {
+        if (searchDurationMillis == null || searchDurationMillis < 0) {
+            return 0L;
         }
-
-        synchronized long ratingCount() {
-            return ratingCount;
-        }
+        return searchDurationMillis;
     }
 }

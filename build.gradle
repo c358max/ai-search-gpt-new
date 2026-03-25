@@ -38,10 +38,12 @@ dependencies {
     implementation "ai.djl.huggingface:tokenizers:${djlVersion}"
     implementation "ai.djl.pytorch:pytorch-engine:${djlVersion}"
     runtimeOnly "ai.djl.pytorch:pytorch-native-cpu:${pytorchVersion}"
-    runtimeOnly 'com.h2database:h2'
+    runtimeOnly 'com.mysql:mysql-connector-j'
+    implementation 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:1.16'
     implementation 'com.github.ben-manes.caffeine:caffeine'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'com.h2database:h2'
 }
 
 tasks.named('test') {
